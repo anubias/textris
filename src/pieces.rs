@@ -1,6 +1,8 @@
+use crate::utils::Position;
+
 const SHAPE_SIZE: usize = 4;
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, PartialEq)]
 pub enum Cell {
     #[default]
     Black,
@@ -155,13 +157,36 @@ impl Tetromino {
                     ],
                 ]
             }
-            _ => [[Cell::default(); SHAPE_SIZE]; SHAPE_SIZE],
         }
     }
 }
 
 pub struct Piece {
+    position: Position,
+    shape: [[Cell; SHAPE_SIZE]; SHAPE_SIZE],
     tetromino: Tetromino,
+}
+
+impl Piece {
+    pub fn new(tetromino: Tetromino, position: Position) -> Self {
+        Self {
+            position,
+            shape: tetromino.get_shape(),
+            tetromino,
+        }
+    }
+
+    pub fn get_position(&self) -> &Position {
+        &self.position
+    }
+
+    pub fn get_size(&self) -> usize {
+        SHAPE_SIZE
+    }
+
+    pub fn get_cell_at(&self, row: usize, col: usize) -> &Cell {
+        &self.shape[row][col]
+    }
 }
 
 impl std::fmt::Display for Piece {
@@ -176,11 +201,5 @@ impl std::fmt::Display for Piece {
         }
 
         write!(f, "")
-    }
-}
-
-impl Piece {
-    pub fn new(tetromino: Tetromino) -> Self {
-        Self { tetromino }
     }
 }
