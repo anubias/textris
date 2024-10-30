@@ -52,6 +52,21 @@ impl Board {
 
         false
     }
+
+    pub fn incorporate_piece(&mut self) {
+        if let Some(p) = &self.piece {
+            let piece_position = p.get_position();
+
+            for col in 0..p.get_size() {
+                for row in 0..p.get_size() {
+                    if p.has_fragment_at(row, col) {
+                        self.board[piece_position.row + row][piece_position.col + col] =
+                            p.get_cell_at(row, col).clone();
+                    }
+                }
+            }
+        }
+    }
 }
 
 impl std::fmt::Display for Board {
