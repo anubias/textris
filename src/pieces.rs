@@ -176,6 +176,10 @@ impl Piece {
         }
     }
 
+    pub fn drop_one_row(&mut self) {
+        self.position.row += 1;
+    }
+
     pub fn get_position(&self) -> &Position {
         &self.position
     }

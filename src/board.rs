@@ -19,6 +19,12 @@ impl Board {
     pub fn add_piece(&mut self, piece: Piece) {
         self.piece = Some(piece);
     }
+
+    pub fn drop_piece_one_row(&mut self) {
+        if let Some(p) = &mut self.piece {
+            p.drop_one_row();
+        }
+    }
 }
 
 impl std::fmt::Display for Board {

@@ -18,9 +18,11 @@ fn main_loop() {
     board.add_piece(s);
 
     loop {
-        std::thread::sleep(Duration::from_secs(1));
         println!("{board}");
+        board.drop_piece_one_row();
 
         // add a condition to break the loop and end the game
+
+        std::thread::sleep(Duration::from_secs(1));
     }
 }
