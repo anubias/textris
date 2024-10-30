@@ -20,10 +20,37 @@ impl Board {
         self.piece = Some(piece);
     }
 
-    pub fn drop_piece_one_row(&mut self) {
+    pub fn drop_piece_one_row(&mut self) -> bool {
         if let Some(p) = &mut self.piece {
-            p.drop_one_row();
+            let mut can_drop = true;
+            let piece_position = p.get_position();
+
+            'outer: for row in 0..p.get_size() {
+                for col in 0..p.get_size() {
+                    if p.has_fragment_at(row, col) {
+                        if row < p.get_size() - 1 {
+                            if p.has_fragment_at(row + 1, col) {
+                                continue;
+                            }
+                        }
+                        if piece_position.row + row + 1 >= BOARD_HEIGHT
+                            || self.board[piece_position.row + row + 1][piece_position.col + col]
+                                != Cell::Black
+                        {
+                            can_drop = false;
+                            break 'outer;
+                        }
+                    }
+                }
+            }
+
+            if can_drop {
+                p.drop_one_row();
+                return true;
+            }
         }
+
+        false
     }
 }
 
@@ -43,11 +70,10 @@ impl std::fmt::Display for Board {
                     {
                         let piece_row = row - piece_position.row;
                         let piece_col = col - piece_position.col;
-                        let piece_cell = p.get_cell_at(piece_row, piece_col);
-                        let piece_cell = if piece_cell == &Cell::Black {
-                            &self.board[row][col]
+                        let piece_cell = if p.has_fragment_at(piece_row, piece_col) {
+                            p.get_cell_at(piece_row, piece_col)
                         } else {
-                            piece_cell
+                            &self.board[row][col]
                         };
 
                         piece_cell

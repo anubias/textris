@@ -191,6 +191,10 @@ impl Piece {
     pub fn get_cell_at(&self, row: usize, col: usize) -> &Cell {
         &self.shape[row][col]
     }
+
+    pub fn has_fragment_at(&self, row: usize, col: usize) -> bool {
+        self.get_cell_at(row, col) != &Cell::Black
+    }
 }
 
 impl std::fmt::Display for Piece {
