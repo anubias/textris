@@ -192,22 +192,7 @@ impl Piece {
         &self.shape[row][col]
     }
 
-    pub fn has_fragment_at(&self, row: usize, col: usize) -> bool {
+    pub fn has_cell_at(&self, row: usize, col: usize) -> bool {
         self.get_cell_at(row, col) != &Cell::Black
-    }
-}
-
-impl std::fmt::Display for Piece {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let shape = self.tetromino.get_shape();
-        for i in 0..SHAPE_SIZE {
-            let mut line = String::new();
-            for j in 0..SHAPE_SIZE {
-                line = format!("{line}{}", shape[i][j]);
-            }
-            let _ = writeln!(f, "{line}");
-        }
-
-        write!(f, "")
     }
 }
