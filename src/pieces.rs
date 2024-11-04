@@ -1,4 +1,4 @@
-use crate::utils::Position;
+use crate::utils::{self, Position};
 
 const SHAPE_SIZE: usize = 4;
 
@@ -194,5 +194,15 @@ impl Piece {
 
     pub fn has_cell_at(&self, row: usize, col: usize) -> bool {
         self.get_cell_at(row, col) != &Cell::Black
+    }
+
+    pub fn is_inside(&self, row: usize, col: usize) -> bool {
+        let pos = self.get_position();
+        let size = self.get_size();
+
+        let (row, col) = utils::to_piece_coord(pos, row, col);
+        let i_size = size as isize;
+
+        utils::is_within_bounds(row, 0, i_size) && utils::is_within_bounds(col, 0, i_size)
     }
 }

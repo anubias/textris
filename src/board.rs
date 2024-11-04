@@ -1,6 +1,6 @@
 use crate::{
     pieces::{Cell, Piece},
-    utils::Position,
+    utils::{self, Position},
 };
 
 const BOARD_WIDTH: usize = 10;
@@ -42,9 +42,11 @@ impl Board {
 
             for row in 0..piece.get_size() {
                 for col in 0..piece.get_size() {
-                    let (board_row, board_col) = Self::to_board_coord(pos, row, col);
-                    if Self::are_board_coords_valid(board_row, board_col) {
-                        self.board[board_row][board_col] = self.get_cell_at(board_row, board_col);
+                    let (i_br, i_bc) = utils::to_board_coord(pos, row, col);
+
+                    if Self::inside_board(i_br, i_bc) {
+                        let (u_br, u_bc) = utils::to_usize(i_br, i_bc);
+                        self.board[u_br][u_bc] = self.get_cell_at(u_br, u_bc);
                     }
                 }
             }
@@ -61,53 +63,54 @@ impl Board {
     }
 
     fn can_piece_move(board: &[[Cell; BOARD_WIDTH]; BOARD_HEIGHT], piece: &Piece) -> bool {
+        let size = piece.get_size();
         let cur_pos = piece.get_position();
         let next_pos = Self::get_new_piece_position(&cur_pos);
 
-        for row in 0..piece.get_size() {
-            for col in 0..piece.get_size() {
-                if piece.has_cell_at(row, col) {
-                    if row < piece.get_size() - 1 {
-                        if piece.has_cell_at(row + 1, col) {
-                            continue;
-                        }
-                    }
-                    let (next_board_row, next_board_col) =
-                        Self::to_board_coord(&next_pos, row, col);
+        if Self::is_piece_on_the_board(piece) {
+            for row in (0..size).rev() {
+                for col in 0..size {
+                    if piece.has_cell_at(row, col) {
+                        let (i_nbr, i_nbc) = utils::to_board_coord(&next_pos, row, col);
 
-                    if next_board_row >= BOARD_HEIGHT
-                        || board[next_board_row][next_board_col] != Cell::Black
-                    {
-                        return false;
+                        if Self::inside_board(i_nbr, i_nbc) {
+                            let (u_nbr, u_nbc) = utils::to_usize(i_nbr, i_nbc);
+                            if board[u_nbr][u_nbc] != Cell::Black {
+                                return false;
+                            }
+                        } else {
+                            return false;
+                        }
                     }
                 }
             }
+            true
+        } else {
+            false
         }
-
-        true
     }
 
-    fn get_cell_at(&self, row: usize, col: usize) -> Cell {
+    fn get_cell_at(&self, board_row: usize, board_col: usize) -> Cell {
         if let Some(piece) = self.piece.as_ref() {
             let pos = piece.get_position();
-            let size = piece.get_size();
 
-            let result = if Self::inside_piece(pos, size, row, col) {
-                let (piece_row, piece_col) = Self::to_piece_coord(pos, size, row, col);
-                let piece_cell = if piece.has_cell_at(piece_row, piece_col) {
-                    *piece.get_cell_at(piece_row, piece_col)
+            let result = if piece.is_inside(board_row, board_col) {
+                let (i_pr, i_pc) = utils::to_piece_coord(pos, board_row, board_col);
+                // we are already inside the piece, so the piece-coordinates should be proper
+                let (u_pr, u_pc) = utils::to_usize(i_pr, i_pc);
+                let piece_cell = if piece.has_cell_at(u_pr, u_pc) {
+                    *piece.get_cell_at(u_pr, u_pc)
                 } else {
-                    self.board[row][col]
+                    self.board[board_row][board_col]
                 };
-
                 piece_cell
             } else {
-                self.board[row][col]
+                self.board[board_row][board_col]
             };
 
             result
         } else {
-            self.board[row][col]
+            self.board[board_row][board_col]
         }
     }
 
@@ -118,34 +121,28 @@ impl Board {
         }
     }
 
-    /// Translates the piece coordinates into board coordinates, by adding to the
-    /// piece coordinates the position (top-left) of the piece relative to the board.
-    ///
-    /// Note: Please take care, that the returned coordinates may not necessarily
-    /// be valid coordinates for the board. So please validate the results before
-    /// indexing with these coordinates.
-    fn to_board_coord(pos: &Position, row: usize, col: usize) -> (usize, usize) {
-        (row + pos.row, col + pos.col)
+    fn inside_board(row: isize, col: isize) -> bool {
+        let (i_height, i_width) = utils::to_isize(BOARD_HEIGHT, BOARD_WIDTH);
+
+        utils::is_within_bounds(row, 0, i_height) && utils::is_within_bounds(col, 0, i_width)
     }
 
-    /// Translates the board coordinates into piece coordinates, by subtracting the
-    /// board coordinates the position (top-left) of the piece relative to the board.
-    ///
-    /// Note: Please note that the returned coordinates are bound to valid piece
-    /// coordinates.
-    fn to_piece_coord(pos: &Position, size: usize, row: usize, col: usize) -> (usize, usize) {
-        let row = row.max(pos.row);
-        let col = col.max(pos.col);
+    fn is_piece_on_the_board(piece: &Piece) -> bool {
+        let pos = piece.get_position();
+        let size = piece.get_size();
 
-        ((row - pos.row).min(size), (col - pos.col).min(size))
-    }
+        for row in 0..size {
+            for col in 0..size {
+                if piece.has_cell_at(row, col) {
+                    let (i_br, i_bc) = utils::to_board_coord(pos, row, col);
+                    if !Self::inside_board(i_br, i_bc) {
+                        return false;
+                    }
+                }
+            }
+        }
 
-    fn inside_piece(pos: &Position, size: usize, row: usize, col: usize) -> bool {
-        row >= pos.row && row < pos.row + size && col >= pos.col && col < pos.col + size
-    }
-
-    fn are_board_coords_valid(row: usize, col: usize) -> bool {
-        row < BOARD_HEIGHT && col < BOARD_WIDTH
+        true
     }
 }
 
