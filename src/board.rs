@@ -19,9 +19,15 @@ impl Board {
         }
     }
 
-    pub fn add_piece(&mut self, piece: Piece) {
-        if self.piece.is_none() {
+    pub fn add_piece(&mut self, piece: Piece) -> bool {
+        if self.piece.is_none()
+            && Self::is_piece_on_the_board(&piece)
+            && !Self::does_piece_overlap(&self.board, &piece)
+        {
             self.piece = Some(piece);
+            true
+        } else {
+            false
         }
     }
 
@@ -63,31 +69,38 @@ impl Board {
     }
 
     fn can_piece_move(board: &[[Cell; BOARD_WIDTH]; BOARD_HEIGHT], piece: &Piece) -> bool {
-        let size = piece.get_size();
-        let cur_pos = piece.get_position();
-        let next_pos = Self::get_new_piece_position(&cur_pos);
-
         if Self::is_piece_on_the_board(piece) {
-            for row in (0..size).rev() {
-                for col in 0..size {
-                    if piece.has_cell_at(row, col) {
-                        let (i_nbr, i_nbc) = utils::to_board_coord(&next_pos, row, col);
+            let mut virt_piece = piece.clone();
+            virt_piece.drop_one_row();
 
-                        if Self::inside_board(i_nbr, i_nbc) {
-                            let (u_nbr, u_nbc) = utils::to_usize(i_nbr, i_nbc);
-                            if board[u_nbr][u_nbc] != Cell::Black {
-                                return false;
-                            }
-                        } else {
-                            return false;
-                        }
-                    }
-                }
-            }
-            true
+            !Self::does_piece_overlap(board, &virt_piece)
         } else {
             false
         }
+    }
+
+    fn does_piece_overlap(board: &[[Cell; BOARD_WIDTH]; BOARD_HEIGHT], piece: &Piece) -> bool {
+        let pos = piece.get_position();
+        let size = piece.get_size();
+
+        for row in 0..size {
+            for col in 0..size {
+                if piece.has_cell_at(row, col) {
+                    let (i_nbr, i_nbc) = utils::to_board_coord(&pos, row, col);
+
+                    if Self::inside_board(i_nbr, i_nbc) {
+                        let (u_nbr, u_nbc) = utils::to_usize(i_nbr, i_nbc);
+                        if board[u_nbr][u_nbc] != Cell::Black {
+                            return true;
+                        }
+                    } else {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        false
     }
 
     fn get_cell_at(&self, board_row: usize, board_col: usize) -> Cell {
@@ -111,13 +124,6 @@ impl Board {
             result
         } else {
             self.board[board_row][board_col]
-        }
-    }
-
-    fn get_new_piece_position(pos: &Position) -> Position {
-        Position {
-            row: pos.row + 1,
-            col: pos.col,
         }
     }
 
@@ -163,5 +169,150 @@ impl std::fmt::Display for Board {
         }
 
         writeln!(f, "🧱{bottom}🧱")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn piece_addition_too_high() {
+        let mut board = Board::new();
+
+        let pos = Position { row: -2, col: 3 };
+        let piece = Piece::new(crate::pieces::Tetromino::O, pos);
+        assert!(!board.add_piece(piece));
+    }
+
+    #[test]
+    fn piece_addition_top_edge() {
+        let mut board = Board::new();
+
+        let pos = Position { row: -1, col: 3 };
+        let piece = Piece::new(crate::pieces::Tetromino::O, pos);
+        assert!(board.add_piece(piece));
+    }
+
+    #[test]
+    fn piece_addition_too_left() {
+        let mut board = Board::new();
+
+        let pos = Position { row: 9, col: -2 };
+        let piece = Piece::new(crate::pieces::Tetromino::O, pos);
+        assert!(!board.add_piece(piece));
+    }
+
+    #[test]
+    fn piece_addition_left_edge() {
+        let mut board = Board::new();
+
+        let pos = Position { row: 9, col: -1 };
+        let piece = Piece::new(crate::pieces::Tetromino::O, pos);
+        assert!(board.add_piece(piece));
+    }
+
+    #[test]
+    fn piece_addition_too_right() {
+        let mut board = Board::new();
+
+        let pos = Position { row: 9, col: 8 };
+        let piece = Piece::new(crate::pieces::Tetromino::O, pos);
+        assert!(!board.add_piece(piece));
+    }
+
+    #[test]
+    fn piece_addition_right_edge() {
+        let mut board = Board::new();
+
+        let pos = Position { row: 9, col: 7 };
+        let piece = Piece::new(crate::pieces::Tetromino::O, pos);
+        assert!(board.add_piece(piece));
+    }
+
+    #[test]
+    fn piece_addition_overlap() {
+        let mut board = Board::new();
+
+        let pos = Position { row: 15, col: 3 };
+        let piece_o = Piece::new(crate::pieces::Tetromino::O, pos);
+        let pos = Position { row: 14, col: 4 };
+        let piece_l = Piece::new(crate::pieces::Tetromino::L, pos);
+
+        assert!(board.add_piece(piece_o));
+        board.incorporate_piece();
+
+        assert!(!board.add_piece(piece_l));
+        println!("{board}");
+    }
+
+    #[test]
+    fn drop_i_piece_on_bottom() {
+        let mut board = Board::new();
+
+        let pos = Position { row: 15, col: 0 };
+        let piece = Piece::new(crate::pieces::Tetromino::I, pos);
+
+        assert!(board.add_piece(piece));
+        assert!(board.drop_piece_one_row());
+        assert!(!board.drop_piece_one_row());
+    }
+
+    #[test]
+    fn drop_s_piece_on_bottom() {
+        let mut board = Board::new();
+
+        let pos = Position { row: 15, col: 0 };
+        let piece = Piece::new(crate::pieces::Tetromino::S, pos);
+
+        assert!(board.add_piece(piece));
+        assert!(board.drop_piece_one_row());
+        assert!(board.drop_piece_one_row());
+        assert!(!board.drop_piece_one_row());
+    }
+
+    #[test]
+    fn stack_pieces_simple() {
+        let mut board = Board::new();
+
+        let pos = Position { row: 15, col: 3 };
+        let piece_o = Piece::new(crate::pieces::Tetromino::O, pos);
+        let pos = Position { row: 14, col: 4 };
+        let piece_l = Piece::new(crate::pieces::Tetromino::L, pos);
+
+        assert!(board.add_piece(piece_o));
+        assert!(board.drop_piece_one_row());
+        assert!(board.drop_piece_one_row());
+        assert!(!board.drop_piece_one_row());
+        board.incorporate_piece();
+
+        assert!(board.add_piece(piece_l));
+        assert!(board.drop_piece_one_row());
+        assert!(!board.drop_piece_one_row());
+    }
+
+    #[test]
+    fn stack_pieces_complex() {
+        let mut board = Board::new();
+
+        let pos = Position { row: 16, col: 1 };
+        let piece_z = Piece::new(crate::pieces::Tetromino::Z, pos);
+        let pos = Position { row: 16, col: 6 };
+        let piece_s = Piece::new(crate::pieces::Tetromino::S, pos);
+        let pos = Position { row: 13, col: 4 };
+        let piece_t = Piece::new(crate::pieces::Tetromino::T, pos);
+
+        assert!(board.add_piece(piece_z));
+        board.incorporate_piece();
+
+        assert!(board.add_piece(piece_s));
+        board.incorporate_piece();
+
+        assert!(board.add_piece(piece_t));
+        assert!(board.drop_piece_one_row());
+        assert!(board.drop_piece_one_row());
+        assert!(board.drop_piece_one_row());
+        assert!(!board.drop_piece_one_row());
+        board.incorporate_piece();
     }
 }

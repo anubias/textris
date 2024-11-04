@@ -31,6 +31,7 @@ impl std::fmt::Display for Cell {
     }
 }
 
+#[derive(Clone, Copy)]
 pub enum Tetromino {
     I,
     J,
@@ -161,6 +162,7 @@ impl Tetromino {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct Piece {
     position: Position,
     shape: [[Cell; SHAPE_SIZE]; SHAPE_SIZE],

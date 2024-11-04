@@ -1,3 +1,4 @@
+#[derive(Clone, Copy)]
 pub struct Position {
     pub row: isize,
     pub col: isize,
