@@ -10,6 +10,14 @@ impl Position {
     }
 }
 
+#[derive(PartialEq)]
+pub enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
+}
+
 /// Translates the piece coordinates into board coordinates, by adding to the
 /// piece coordinates the position (top-left) of the piece relative to the board.
 ///

@@ -1,4 +1,4 @@
-use crate::utils::{self, Position};
+use crate::utils::{self, Direction, Position};
 
 const SHAPE_SIZE: usize = 4;
 
@@ -178,8 +178,13 @@ impl Piece {
         }
     }
 
-    pub fn drop_one_row(&mut self) {
-        self.position.row += 1;
+    pub fn slide(&mut self, direction: &Direction) {
+        match direction {
+            Direction::Up => self.position.row -= 1,
+            Direction::Down => self.position.row += 1,
+            Direction::Left => self.position.col -= 1,
+            Direction::Right => self.position.col += 1,
+        }
     }
 
     pub fn get_position(&self) -> &Position {

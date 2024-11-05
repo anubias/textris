@@ -1,6 +1,6 @@
 use crate::{
     pieces::{Cell, Piece},
-    utils::{self, Position},
+    utils::{self, Direction, Position},
 };
 
 const BOARD_WIDTH: usize = 10;
@@ -32,16 +32,22 @@ impl Board {
         }
     }
 
-    pub fn drop_piece_one_row(&mut self) -> bool {
+    pub fn move_piece(&mut self, direction: &Direction) -> bool {
         if let Some(piece) = &mut self.piece {
-            if Self::can_piece_move(&self.board, piece) {
-                piece.drop_one_row();
+            if Self::can_piece_slide(&self.board, piece, direction) {
+                piece.slide(&direction);
                 return true;
             }
-            self.incorporate_piece();
+            if *direction == Direction::Down {
+                self.incorporate_piece();
+            }
         }
 
         false
+    }
+
+    pub fn has_piece(&self) -> bool {
+        self.piece.is_some()
     }
 }
 
@@ -51,10 +57,14 @@ impl Board {
         self.piece = None;
     }
 
-    fn can_piece_move(board: &[[Cell; BOARD_WIDTH]; BOARD_HEIGHT], piece: &Piece) -> bool {
+    fn can_piece_slide(
+        board: &[[Cell; BOARD_WIDTH]; BOARD_HEIGHT],
+        piece: &Piece,
+        direction: &Direction,
+    ) -> bool {
         if Self::is_piece_on_the_board(piece) {
             let mut virt_piece = piece.clone();
-            virt_piece.drop_one_row();
+            virt_piece.slide(direction);
 
             !Self::does_piece_overlap(board, &virt_piece)
         } else {
@@ -255,8 +265,8 @@ mod tests {
         let piece = Piece::new(crate::pieces::Tetromino::I, pos);
 
         assert!(board.add_piece(piece));
-        assert!(board.drop_piece_one_row());
-        assert!(!board.drop_piece_one_row());
+        assert!(board.move_piece(&Direction::Down));
+        assert!(!board.move_piece(&Direction::Down));
     }
 
     #[test]
@@ -267,9 +277,9 @@ mod tests {
         let piece = Piece::new(crate::pieces::Tetromino::S, pos);
 
         assert!(board.add_piece(piece));
-        assert!(board.drop_piece_one_row());
-        assert!(board.drop_piece_one_row());
-        assert!(!board.drop_piece_one_row());
+        assert!(board.move_piece(&Direction::Down));
+        assert!(board.move_piece(&Direction::Down));
+        assert!(!board.move_piece(&Direction::Down));
     }
 
     #[test]
@@ -282,13 +292,13 @@ mod tests {
         let piece_l = Piece::new(crate::pieces::Tetromino::L, pos);
 
         assert!(board.add_piece(piece_o));
-        assert!(board.drop_piece_one_row());
-        assert!(board.drop_piece_one_row());
-        assert!(!board.drop_piece_one_row());
+        assert!(board.move_piece(&Direction::Down));
+        assert!(board.move_piece(&Direction::Down));
+        assert!(!board.move_piece(&Direction::Down));
 
         assert!(board.add_piece(piece_l));
-        assert!(board.drop_piece_one_row());
-        assert!(!board.drop_piece_one_row());
+        assert!(board.move_piece(&Direction::Down));
+        assert!(!board.move_piece(&Direction::Down));
     }
 
     #[test]
@@ -309,9 +319,9 @@ mod tests {
         board.incorporate_piece();
 
         assert!(board.add_piece(piece_t));
-        assert!(board.drop_piece_one_row());
-        assert!(board.drop_piece_one_row());
-        assert!(board.drop_piece_one_row());
-        assert!(!board.drop_piece_one_row());
+        assert!(board.move_piece(&Direction::Down));
+        assert!(board.move_piece(&Direction::Down));
+        assert!(board.move_piece(&Direction::Down));
+        assert!(!board.move_piece(&Direction::Down));
     }
 }
