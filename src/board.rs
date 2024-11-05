@@ -11,6 +11,7 @@ pub struct Board {
     piece: Option<Piece>,
 }
 
+// Public functions
 impl Board {
     pub fn new() -> Self {
         Self {
@@ -37,28 +38,10 @@ impl Board {
                 piece.drop_one_row();
                 return true;
             }
+            self.incorporate_piece();
         }
 
         false
-    }
-
-    pub fn incorporate_piece(&mut self) {
-        if let Some(piece) = &self.piece {
-            let pos = piece.get_position();
-
-            for row in 0..piece.get_size() {
-                for col in 0..piece.get_size() {
-                    let (i_br, i_bc) = utils::to_board_coord(pos, row, col);
-
-                    if Self::inside_board(i_br, i_bc) {
-                        let (u_br, u_bc) = utils::to_usize(i_br, i_bc);
-                        self.board[u_br][u_bc] = self.get_cell_at(u_br, u_bc);
-                    }
-                }
-            }
-
-            self.remove_piece();
-        }
     }
 }
 
@@ -76,6 +59,25 @@ impl Board {
             !Self::does_piece_overlap(board, &virt_piece)
         } else {
             false
+        }
+    }
+
+    fn incorporate_piece(&mut self) {
+        if let Some(piece) = &self.piece {
+            let pos = piece.get_position();
+
+            for row in 0..piece.get_size() {
+                for col in 0..piece.get_size() {
+                    let (i_br, i_bc) = utils::to_board_coord(pos, row, col);
+
+                    if Self::inside_board(i_br, i_bc) {
+                        let (u_br, u_bc) = utils::to_usize(i_br, i_bc);
+                        self.board[u_br][u_bc] = self.get_cell_at(u_br, u_bc);
+                    }
+                }
+            }
+
+            self.remove_piece();
         }
     }
 
@@ -243,7 +245,6 @@ mod tests {
         board.incorporate_piece();
 
         assert!(!board.add_piece(piece_l));
-        println!("{board}");
     }
 
     #[test]
@@ -284,7 +285,6 @@ mod tests {
         assert!(board.drop_piece_one_row());
         assert!(board.drop_piece_one_row());
         assert!(!board.drop_piece_one_row());
-        board.incorporate_piece();
 
         assert!(board.add_piece(piece_l));
         assert!(board.drop_piece_one_row());
@@ -313,6 +313,5 @@ mod tests {
         assert!(board.drop_piece_one_row());
         assert!(board.drop_piece_one_row());
         assert!(!board.drop_piece_one_row());
-        board.incorporate_piece();
     }
 }
