@@ -16,24 +16,24 @@ fn main_loop() {
     let mut board = Board::new();
     let s = Piece::new(Tetromino::S, Position::new(17, 0));
     board.add_piece(s);
-    board.move_piece(&Direction::Down);
+    board.move_piece(Direction::Down);
 
     let s = Piece::new(Tetromino::S, Position::new(15, 4));
     board.add_piece(s);
-    board.move_piece(&Direction::Down);
-    board.move_piece(&Direction::Down);
-    board.move_piece(&Direction::Down);
+    board.move_piece(Direction::Down);
+    board.move_piece(Direction::Down);
+    board.move_piece(Direction::Down);
 
-    let mut col = 2;
     loop {
         println!("{board}");
         if !board.has_piece() {
-            let s = Piece::new(Tetromino::L, Position::new(0, col));
+            let s = Piece::new(Tetromino::L, Position::new(0, 2));
             board.add_piece(s);
-            // col += 2;
+            board.rotate_piece(utils::Rotation::CounterClockwise);
+            board.rotate_piece(utils::Rotation::CounterClockwise);
         } else {
-            if !board.move_piece(&Direction::Left) {
-                board.move_piece(&Direction::Down);
+            if !board.move_piece(Direction::Left) {
+                board.move_piece(Direction::Down);
             }
         };
 

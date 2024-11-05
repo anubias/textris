@@ -1,4 +1,4 @@
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct Position {
     pub row: isize,
     pub col: isize,
@@ -10,12 +10,17 @@ impl Position {
     }
 }
 
-#[derive(PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum Direction {
     Up,
     Down,
     Left,
     Right,
+}
+
+pub enum Rotation {
+    Clockwise,
+    CounterClockwise,
 }
 
 /// Translates the piece coordinates into board coordinates, by adding to the

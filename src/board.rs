@@ -1,6 +1,6 @@
 use crate::{
     pieces::{Cell, Piece},
-    utils::{self, Direction, Position},
+    utils::{self, Direction, Position, Rotation},
 };
 
 const BOARD_WIDTH: usize = 10;
@@ -32,18 +32,24 @@ impl Board {
         }
     }
 
-    pub fn move_piece(&mut self, direction: &Direction) -> bool {
+    pub fn move_piece(&mut self, direction: Direction) -> bool {
         if let Some(piece) = &mut self.piece {
-            if Self::can_piece_slide(&self.board, piece, direction) {
+            if Self::can_piece_slide(&self.board, piece, &direction) {
                 piece.slide(&direction);
                 return true;
             }
-            if *direction == Direction::Down {
+            if direction == Direction::Down {
                 self.incorporate_piece();
             }
         }
 
         false
+    }
+
+    pub fn rotate_piece(&mut self, rotation: Rotation) {
+        if let Some(p) = self.piece.as_mut() {
+            p.rotate(rotation);
+        }
     }
 
     pub fn has_piece(&self) -> bool {
@@ -265,8 +271,8 @@ mod tests {
         let piece = Piece::new(crate::pieces::Tetromino::I, pos);
 
         assert!(board.add_piece(piece));
-        assert!(board.move_piece(&Direction::Down));
-        assert!(!board.move_piece(&Direction::Down));
+        assert!(board.move_piece(Direction::Down));
+        assert!(!board.move_piece(Direction::Down));
     }
 
     #[test]
@@ -277,9 +283,9 @@ mod tests {
         let piece = Piece::new(crate::pieces::Tetromino::S, pos);
 
         assert!(board.add_piece(piece));
-        assert!(board.move_piece(&Direction::Down));
-        assert!(board.move_piece(&Direction::Down));
-        assert!(!board.move_piece(&Direction::Down));
+        assert!(board.move_piece(Direction::Down));
+        assert!(board.move_piece(Direction::Down));
+        assert!(!board.move_piece(Direction::Down));
     }
 
     #[test]
@@ -292,13 +298,13 @@ mod tests {
         let piece_l = Piece::new(crate::pieces::Tetromino::L, pos);
 
         assert!(board.add_piece(piece_o));
-        assert!(board.move_piece(&Direction::Down));
-        assert!(board.move_piece(&Direction::Down));
-        assert!(!board.move_piece(&Direction::Down));
+        assert!(board.move_piece(Direction::Down));
+        assert!(board.move_piece(Direction::Down));
+        assert!(!board.move_piece(Direction::Down));
 
         assert!(board.add_piece(piece_l));
-        assert!(board.move_piece(&Direction::Down));
-        assert!(!board.move_piece(&Direction::Down));
+        assert!(board.move_piece(Direction::Down));
+        assert!(!board.move_piece(Direction::Down));
     }
 
     #[test]
@@ -319,9 +325,9 @@ mod tests {
         board.incorporate_piece();
 
         assert!(board.add_piece(piece_t));
-        assert!(board.move_piece(&Direction::Down));
-        assert!(board.move_piece(&Direction::Down));
-        assert!(board.move_piece(&Direction::Down));
-        assert!(!board.move_piece(&Direction::Down));
+        assert!(board.move_piece(Direction::Down));
+        assert!(board.move_piece(Direction::Down));
+        assert!(board.move_piece(Direction::Down));
+        assert!(!board.move_piece(Direction::Down));
     }
 }

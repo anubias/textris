@@ -1,4 +1,4 @@
-use crate::utils::{self, Direction, Position};
+use crate::utils::{self, Direction, Position, Rotation};
 
 const SHAPE_SIZE: usize = 4;
 
@@ -31,7 +31,7 @@ impl std::fmt::Display for Cell {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub enum Tetromino {
     I,
     J,
@@ -162,9 +162,10 @@ impl Tetromino {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct Piece {
     position: Position,
+    orientation: Direction,
     shape: [[Cell; SHAPE_SIZE]; SHAPE_SIZE],
     tetromino: Tetromino,
 }
@@ -173,6 +174,7 @@ impl Piece {
     pub fn new(tetromino: Tetromino, position: Position) -> Self {
         Self {
             position,
+            orientation: Direction::Up,
             shape: tetromino.get_shape(),
             tetromino,
         }
@@ -185,6 +187,25 @@ impl Piece {
             Direction::Left => self.position.col -= 1,
             Direction::Right => self.position.col += 1,
         }
+    }
+
+    pub fn rotate(&mut self, rotation: Rotation) {
+        self.orientation = match rotation {
+            Rotation::Clockwise => match self.orientation {
+                Direction::Up => Direction::Right,
+                Direction::Down => Direction::Left,
+                Direction::Left => Direction::Up,
+                Direction::Right => Direction::Down,
+            },
+            Rotation::CounterClockwise => match self.orientation {
+                Direction::Up => Direction::Left,
+                Direction::Down => Direction::Right,
+                Direction::Left => Direction::Down,
+                Direction::Right => Direction::Up,
+            },
+        };
+
+        self.rotate_shape();
     }
 
     pub fn get_position(&self) -> &Position {
@@ -211,5 +232,42 @@ impl Piece {
         let i_size = size as isize;
 
         utils::is_within_bounds(row, 0, i_size) && utils::is_within_bounds(col, 0, i_size)
+    }
+}
+
+//Private functions
+impl Piece {
+    fn rotate_shape(&mut self) {
+        let template = self.tetromino.get_shape();
+        let mut new_shape: [[Cell; SHAPE_SIZE]; SHAPE_SIZE] =
+            [[Cell::Black; SHAPE_SIZE]; SHAPE_SIZE];
+
+        self.shape = match self.orientation {
+            Direction::Up => template,
+            Direction::Down => {
+                for row in (0..SHAPE_SIZE).rev() {
+                    for col in (0..SHAPE_SIZE).rev() {
+                        new_shape[SHAPE_SIZE - 1 - row][SHAPE_SIZE - 1 - col] = template[row][col];
+                    }
+                }
+                new_shape
+            }
+            Direction::Left => {
+                for col in (0..SHAPE_SIZE).rev() {
+                    for row in 0..SHAPE_SIZE {
+                        new_shape[SHAPE_SIZE - 1 - col][row] = template[row][col];
+                    }
+                }
+                new_shape
+            }
+            Direction::Right => {
+                for col in 0..SHAPE_SIZE {
+                    for row in (0..SHAPE_SIZE).rev() {
+                        new_shape[col][SHAPE_SIZE - 1 - row] = template[row][col];
+                    }
+                }
+                new_shape
+            }
+        }
     }
 }
