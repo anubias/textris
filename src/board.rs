@@ -1,6 +1,6 @@
 use crate::{
     pieces::{Cell, Piece},
-    utils::{self, Direction, Position, Rotation},
+    utils::{self, Direction, Rotation},
 };
 
 const BOARD_WIDTH: usize = 10;
@@ -192,6 +192,8 @@ impl std::fmt::Display for Board {
 
 #[cfg(test)]
 mod tests {
+    use utils::Position;
+
     use super::*;
 
     #[test]
