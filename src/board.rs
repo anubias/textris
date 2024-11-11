@@ -33,9 +33,9 @@ impl Board {
     }
 
     pub fn move_piece(&mut self, direction: Direction) -> bool {
-        if let Some(piece) = &mut self.piece {
-            if Self::can_piece_slide(&self.board, piece, &direction) {
-                piece.slide(&direction);
+        if let Some(p) = self.piece.as_mut() {
+            if Self::can_piece_slide(&self.board, p, &direction) {
+                p.slide(&direction);
                 return true;
             }
             if direction == Direction::Down {
@@ -46,10 +46,34 @@ impl Board {
         false
     }
 
-    pub fn rotate_piece(&mut self, rotation: Rotation) {
+    pub fn rotate_piece(&mut self, rotation: Rotation) -> bool {
         if let Some(p) = self.piece.as_mut() {
-            p.rotate(rotation);
+            // Check if 'in-place' rotation is allowed, and rotate if true
+            if Self::can_piece_rotate(&self.board, p, &rotation) {
+                p.rotate(&rotation);
+                return true;
+            }
+            if Self::can_piece_slide(&self.board, p, &Direction::Left) {
+                p.slide(&Direction::Left);
+                // Try sliding the piece to the left, and attempt a rotation there
+                if Self::can_piece_rotate(&self.board, p, &rotation) {
+                    p.rotate(&rotation);
+                    return true;
+                }
+                p.slide(&Direction::Right); // undo the slide
+            }
+            if Self::can_piece_slide(&self.board, p, &Direction::Right) {
+                p.slide(&Direction::Right);
+                // Try sliding the piece to the right, and attempt a rotation there
+                if Self::can_piece_rotate(&self.board, p, &rotation) {
+                    p.rotate(&rotation);
+                    return true;
+                }
+                p.slide(&Direction::Left); // undo the slide
+            }
         }
+
+        false
     }
 
     pub fn has_piece(&self) -> bool {
@@ -71,6 +95,21 @@ impl Board {
         if Self::is_piece_on_the_board(piece) {
             let mut virt_piece = piece.clone();
             virt_piece.slide(direction);
+
+            !Self::does_piece_overlap(board, &virt_piece)
+        } else {
+            false
+        }
+    }
+
+    fn can_piece_rotate(
+        board: &[[Cell; BOARD_WIDTH]; BOARD_HEIGHT],
+        piece: &Piece,
+        rotation: &Rotation,
+    ) -> bool {
+        if Self::is_piece_on_the_board(piece) {
+            let mut virt_piece = piece.clone();
+            virt_piece.rotate(rotation);
 
             !Self::does_piece_overlap(board, &virt_piece)
         } else {
@@ -331,5 +370,62 @@ mod tests {
         assert!(board.move_piece(Direction::Down));
         assert!(board.move_piece(Direction::Down));
         assert!(!board.move_piece(Direction::Down));
+    }
+
+    #[test]
+    fn rotate_piece_ok() {
+        let mut board = Board::new();
+
+        let pos = Position { row: 5, col: 3 };
+        let piece_i = Piece::new(crate::pieces::Tetromino::I, pos);
+
+        assert!(board.add_piece(piece_i));
+
+        assert!(board.rotate_piece(Rotation::Clockwise));
+        assert!(board.rotate_piece(Rotation::Clockwise));
+
+        assert!(board.rotate_piece(Rotation::CounterClockwise));
+        assert!(board.rotate_piece(Rotation::CounterClockwise));
+    }
+
+    #[test]
+    fn rotate_piece_ok_with_slide() {
+        let mut board = Board::new();
+
+        let pos = Position { row: 6, col: 0 };
+        let piece_z = Piece::new(crate::pieces::Tetromino::Z, pos);
+        assert!(board.add_piece(piece_z));
+        board.incorporate_piece();
+
+        let pos = Position { row: 6, col: 3 };
+        let piece_l = Piece::new(crate::pieces::Tetromino::L, pos.clone());
+        assert!(board.add_piece(piece_l));
+
+        assert!(board.rotate_piece(Rotation::CounterClockwise));
+        let piece = board.piece.unwrap();
+        assert_eq!(pos.col + 1, piece.get_position().col);
+    }
+
+    #[test]
+    fn rotate_piece_fails() {
+        let mut board = Board::new();
+
+        let pos = Position { row: 6, col: 6 };
+        let piece_s = Piece::new(crate::pieces::Tetromino::S, pos);
+        assert!(board.add_piece(piece_s));
+        board.incorporate_piece();
+
+        let pos = Position { row: 6, col: 0 };
+        let piece_z = Piece::new(crate::pieces::Tetromino::Z, pos);
+        assert!(board.add_piece(piece_z));
+        board.incorporate_piece();
+
+        let pos = Position { row: 6, col: 3 };
+        let piece_l = Piece::new(crate::pieces::Tetromino::L, pos);
+        assert!(board.add_piece(piece_l));
+
+        assert!(board.rotate_piece(Rotation::Clockwise));
+        assert!(board.rotate_piece(Rotation::Clockwise));
+        assert!(!board.rotate_piece(Rotation::Clockwise));
     }
 }

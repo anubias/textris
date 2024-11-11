@@ -189,7 +189,7 @@ impl Piece {
         }
     }
 
-    pub fn rotate(&mut self, rotation: Rotation) {
+    pub fn rotate(&mut self, rotation: &Rotation) {
         self.orientation = match rotation {
             Rotation::Clockwise => match self.orientation {
                 Direction::Up => Direction::Right,
