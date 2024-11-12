@@ -1,6 +1,7 @@
 use crate::utils::{self, Direction, Position, Rotation};
 
 const SHAPE_SIZE: usize = 4;
+const SHAPE_COUNT: usize = 7;
 
 #[derive(Clone, Copy, Default, PartialEq)]
 pub enum Cell {
@@ -43,121 +44,99 @@ pub enum Tetromino {
 }
 
 impl Tetromino {
+    pub fn get_count() -> usize {
+        SHAPE_COUNT
+    }
+
+    pub fn get_starting_row(&self) -> isize {
+        match self {
+            Self::I | Self::J | Self::L => 0,
+            _ => -1,
+        }
+    }
+
     fn get_shape(&self) -> [[Cell; SHAPE_SIZE]; SHAPE_SIZE] {
+        let black = Cell::default();
+
         match self {
             Tetromino::I => {
-                let cell = Cell::Brown;
+                let brown = Cell::Brown;
                 [
-                    [Cell::default(), cell, Cell::default(), Cell::default()],
-                    [Cell::default(), cell, Cell::default(), Cell::default()],
-                    [Cell::default(), cell, Cell::default(), Cell::default()],
-                    [Cell::default(), cell, Cell::default(), Cell::default()],
+                    [black, brown, black, black],
+                    [black, brown, black, black],
+                    [black, brown, black, black],
+                    [black, brown, black, black],
                 ]
             }
             Tetromino::J => {
-                let cell = Cell::Blue;
+                let blue = Cell::Blue;
                 [
-                    [Cell::default(), Cell::default(), cell, Cell::default()],
-                    [Cell::default(), Cell::default(), cell, Cell::default()],
-                    [Cell::default(), cell, cell, Cell::default()],
-                    [
-                        Cell::default(),
-                        Cell::default(),
-                        Cell::default(),
-                        Cell::default(),
-                    ],
+                    [black, black, blue, black],
+                    [black, black, blue, black],
+                    [black, blue, blue, black],
+                    [black, black, black, black],
                 ]
             }
             Tetromino::L => {
-                let cell = Cell::Orange;
+                let orange = Cell::Orange;
                 [
-                    [Cell::default(), cell, Cell::default(), Cell::default()],
-                    [Cell::default(), cell, Cell::default(), Cell::default()],
-                    [Cell::default(), cell, cell, Cell::default()],
-                    [
-                        Cell::default(),
-                        Cell::default(),
-                        Cell::default(),
-                        Cell::default(),
-                    ],
+                    [black, orange, black, black],
+                    [black, orange, black, black],
+                    [black, orange, orange, black],
+                    [black, black, black, black],
                 ]
             }
             Tetromino::O => {
-                let cell = Cell::Yellow;
+                let yellow = Cell::Yellow;
                 [
-                    [
-                        Cell::default(),
-                        Cell::default(),
-                        Cell::default(),
-                        Cell::default(),
-                    ],
-                    [Cell::default(), cell, cell, Cell::default()],
-                    [Cell::default(), cell, cell, Cell::default()],
-                    [
-                        Cell::default(),
-                        Cell::default(),
-                        Cell::default(),
-                        Cell::default(),
-                    ],
+                    [black, black, black, black],
+                    [black, yellow, yellow, black],
+                    [black, yellow, yellow, black],
+                    [black, black, black, black],
                 ]
             }
             Tetromino::S => {
-                let cell = Cell::Green;
+                let green = Cell::Green;
                 [
-                    [
-                        Cell::default(),
-                        Cell::default(),
-                        Cell::default(),
-                        Cell::default(),
-                    ],
-                    [Cell::default(), cell, cell, Cell::default()],
-                    [cell, cell, Cell::default(), Cell::default()],
-                    [
-                        Cell::default(),
-                        Cell::default(),
-                        Cell::default(),
-                        Cell::default(),
-                    ],
+                    [black, black, black, black],
+                    [black, green, green, black],
+                    [green, green, black, black],
+                    [black, black, black, black],
                 ]
             }
             Tetromino::T => {
-                let cell = Cell::Purple;
+                let purple = Cell::Purple;
                 [
-                    [
-                        Cell::default(),
-                        Cell::default(),
-                        Cell::default(),
-                        Cell::default(),
-                    ],
-                    [cell, cell, cell, Cell::default()],
-                    [Cell::default(), cell, Cell::default(), Cell::default()],
-                    [
-                        Cell::default(),
-                        Cell::default(),
-                        Cell::default(),
-                        Cell::default(),
-                    ],
+                    [black, black, black, black],
+                    [purple, purple, purple, black],
+                    [black, purple, black, black],
+                    [black, black, black, black],
                 ]
             }
             Tetromino::Z => {
-                let cell = Cell::Red;
+                let red = Cell::Red;
                 [
-                    [
-                        Cell::default(),
-                        Cell::default(),
-                        Cell::default(),
-                        Cell::default(),
-                    ],
-                    [Cell::default(), cell, cell, Cell::default()],
-                    [Cell::default(), Cell::default(), cell, cell],
-                    [
-                        Cell::default(),
-                        Cell::default(),
-                        Cell::default(),
-                        Cell::default(),
-                    ],
+                    [black, black, black, black],
+                    [black, red, red, black],
+                    [black, black, red, red],
+                    [black, black, black, black],
                 ]
             }
+        }
+    }
+}
+
+impl From<usize> for Tetromino {
+    fn from(value: usize) -> Self {
+        match value {
+            1 => Self::I,
+            2 => Self::J,
+            3 => Self::L,
+            4 => Self::O,
+            5 => Self::S,
+            6 => Self::T,
+            7 => Self::Z,
+            _ => Self::O,
         }
     }
 }

@@ -7,25 +7,30 @@ use std::{
     time::{Duration, Instant},
 };
 
-use board::Board;
 use crossterm::{
     cursor::{Hide, MoveTo, MoveToNextLine, Show},
     event::{poll, read, Event, KeyCode},
     terminal::{disable_raw_mode, enable_raw_mode, Clear},
     ExecutableCommand, QueueableCommand,
 };
+use rand::{rngs::ThreadRng, Rng};
+
+use board::Board;
 use pieces::{Piece, Tetromino};
 use utils::{Direction, Position};
 
 const PIECE_DROP_MILLISECONDS: u128 = 500;
+const PIECE_SPAWN_COLUMN: isize = 4;
 
 struct Context {
+    rng: ThreadRng,
     stdout: Stdout,
 }
 
 impl Context {
     fn new() -> Self {
         Self {
+            rng: rand::thread_rng(),
             stdout: std::io::stdout(),
         }
     }
@@ -44,7 +49,7 @@ impl Context {
         Ok(())
     }
 
-    fn print_board(&mut self, board: String) -> std::io::Result<()> {
+    fn print_game(&mut self, board: String) -> std::io::Result<()> {
         self.stdout.queue(MoveTo(0, 0))?;
 
         for line in board.lines() {
@@ -53,6 +58,14 @@ impl Context {
         }
 
         self.stdout.flush()
+    }
+
+    fn get_next_piece(&mut self) -> Piece {
+        let next = self.rng.gen_range(1..Tetromino::get_count() + 1);
+        let tetromino = Tetromino::from(next);
+        let position = Position::new(tetromino.get_starting_row(), PIECE_SPAWN_COLUMN);
+
+        Piece::new(tetromino, position)
     }
 }
 
@@ -70,7 +83,7 @@ fn game_loop(context: &mut Context) -> std::io::Result<()> {
     let mut now = Instant::now();
 
     loop {
-        context.print_board(format!("{board}"))?;
+        context.print_game(format!("{board}"))?;
 
         if poll(Duration::from_millis(100))? {
             let event = read()?;
@@ -93,8 +106,8 @@ fn game_loop(context: &mut Context) -> std::io::Result<()> {
         }
 
         if !board.has_piece() {
-            let s = Piece::new(Tetromino::L, Position::new(0, 2));
-            board.add_piece(s);
+            let piece = context.get_next_piece();
+            board.add_piece(piece);
         }
 
         let elapsed = now.elapsed();
