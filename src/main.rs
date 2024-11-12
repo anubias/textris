@@ -81,6 +81,7 @@ fn game_loop(context: &mut Context) -> std::io::Result<()> {
 
     let mut board = Board::new();
     let mut now = Instant::now();
+    let mut paused = false;
 
     loop {
         context.print_game(format!("{board}"))?;
@@ -96,13 +97,25 @@ fn game_loop(context: &mut Context) -> std::io::Result<()> {
                 board.move_piece(Direction::Right);
             } else if event == Event::Key(KeyCode::Down.into()) {
                 board.move_piece(Direction::Down);
-            } else if event == Event::Key(KeyCode::Char('f').into()) {
+            } else if event == Event::Key(KeyCode::Char('p').into())
+                || event == Event::Key(KeyCode::Char('P').into())
+            {
+                paused = !paused;
+            } else if event == Event::Key(KeyCode::Char('f').into())
+                || event == Event::Key(KeyCode::Char('F').into())
+            {
                 board.rotate_piece(utils::Rotation::CounterClockwise);
-            } else if event == Event::Key(KeyCode::Char('g').into()) {
+            } else if event == Event::Key(KeyCode::Char('g').into())
+                || event == Event::Key(KeyCode::Char('G').into())
+            {
                 board.rotate_piece(utils::Rotation::Clockwise);
             } else if event == Event::Key(KeyCode::Char(' ').into()) {
                 // land piece all the way down
             }
+        }
+
+        if paused {
+            continue;
         }
 
         if !board.has_piece() {
