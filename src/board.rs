@@ -133,6 +133,46 @@ impl Board {
             }
 
             self.remove_piece();
+            self.collapse_completed_rows();
+        }
+    }
+
+    fn collapse_completed_rows(&mut self) {
+        loop {
+            let mut repeat = false;
+
+            for row in (1..BOARD_HEIGHT).rev() {
+                if self.is_row_full(row) {
+                    repeat = true;
+                    for pull_row in (1..row).rev() {
+                        self.lower_row(pull_row);
+                    }
+                }
+            }
+
+            if !repeat {
+                break;
+            }
+        }
+    }
+
+    fn is_row_full(&self, row: usize) -> bool {
+        for col in 0..BOARD_WIDTH {
+            if self.get_cell_at(row, col) == Cell::Black {
+                return false;
+            }
+        }
+
+        true
+    }
+
+    fn lower_row(&mut self, row: usize) {
+        for col in 0..BOARD_WIDTH {
+            if row == 0 {
+                self.board[row][col] = Cell::Black
+            } else {
+                self.board[row + 1][col] = self.board[row][col];
+            }
         }
     }
 
@@ -427,5 +467,107 @@ mod tests {
         assert!(board.rotate_piece(Rotation::Clockwise));
         assert!(board.rotate_piece(Rotation::Clockwise));
         assert!(!board.rotate_piece(Rotation::Clockwise));
+    }
+
+    #[test]
+    fn lower_single_row() {
+        let mut board = Board::new();
+
+        let pos = Position { row: 17, col: 5 };
+        let piece_s = Piece::new(crate::pieces::Tetromino::S, pos);
+        assert!(board.add_piece(piece_s));
+        board.incorporate_piece();
+
+        let pos = Position { row: 17, col: 1 };
+        let piece_z = Piece::new(crate::pieces::Tetromino::Z, pos);
+        assert!(board.add_piece(piece_z));
+        board.incorporate_piece();
+
+        let pos = Position { row: 17, col: 0 };
+        let piece_l = Piece::new(crate::pieces::Tetromino::L, pos);
+        assert!(board.add_piece(piece_l));
+        board.incorporate_piece();
+
+        let pos = Position { row: 17, col: 6 };
+        let piece_j = Piece::new(crate::pieces::Tetromino::J, pos);
+        assert!(board.add_piece(piece_j));
+        board.incorporate_piece();
+
+        let pos = Position { row: 16, col: -1 };
+        let piece_i = Piece::new(crate::pieces::Tetromino::I, pos);
+        assert!(board.add_piece(piece_i));
+        board.incorporate_piece();
+
+        assert_eq!(Cell::Red, board.get_cell_at(18, 2));
+        assert_eq!(Cell::Green, board.get_cell_at(18, 7));
+        assert_eq!(Cell::Orange, board.get_cell_at(19, 2));
+        assert_eq!(Cell::Blue, board.get_cell_at(19, 7));
+
+        let pos = Position { row: 16, col: 8 };
+        let piece_i = Piece::new(crate::pieces::Tetromino::I, pos);
+        assert!(board.add_piece(piece_i));
+        board.incorporate_piece();
+
+        assert_eq!(Cell::Orange, board.get_cell_at(18, 1));
+        assert_eq!(Cell::Black, board.get_cell_at(18, 2));
+        assert_eq!(Cell::Black, board.get_cell_at(18, 7));
+        assert_eq!(Cell::Red, board.get_cell_at(19, 2));
+        assert_eq!(Cell::Green, board.get_cell_at(19, 7));
+    }
+
+    #[test]
+    fn lower_multiple_rows() {
+        let mut board = Board::new();
+
+        let pos = Position { row: 17, col: 5 };
+        let piece_s = Piece::new(crate::pieces::Tetromino::S, pos);
+        assert!(board.add_piece(piece_s));
+        board.incorporate_piece();
+
+        let pos = Position { row: 17, col: 1 };
+        let piece_z = Piece::new(crate::pieces::Tetromino::Z, pos);
+        assert!(board.add_piece(piece_z));
+        board.incorporate_piece();
+
+        let pos = Position { row: 17, col: 0 };
+        let piece_l = Piece::new(crate::pieces::Tetromino::L, pos);
+        assert!(board.add_piece(piece_l));
+        board.incorporate_piece();
+
+        let pos = Position { row: 17, col: 6 };
+        let piece_j = Piece::new(crate::pieces::Tetromino::J, pos);
+        assert!(board.add_piece(piece_j));
+        board.incorporate_piece();
+
+        let pos = Position { row: 16, col: -1 };
+        let piece_i = Piece::new(crate::pieces::Tetromino::I, pos);
+        assert!(board.add_piece(piece_i));
+        board.incorporate_piece();
+
+        let pos = Position { row: 16, col: 3 };
+        let piece_o = Piece::new(crate::pieces::Tetromino::O, pos);
+        assert!(board.add_piece(piece_o));
+        board.incorporate_piece();
+
+        assert_eq!(Cell::Brown, board.get_cell_at(17, 0));
+        assert_eq!(Cell::Orange, board.get_cell_at(17, 1));
+        assert_eq!(Cell::Yellow, board.get_cell_at(17, 4));
+        assert_eq!(Cell::Blue, board.get_cell_at(17, 8));
+        assert_eq!(Cell::Red, board.get_cell_at(18, 2));
+        assert_eq!(Cell::Green, board.get_cell_at(18, 7));
+        assert_eq!(Cell::Orange, board.get_cell_at(19, 2));
+        assert_eq!(Cell::Blue, board.get_cell_at(19, 7));
+
+        let pos = Position { row: 16, col: 8 };
+        let piece_i = Piece::new(crate::pieces::Tetromino::I, pos);
+        assert!(board.add_piece(piece_i));
+        board.incorporate_piece();
+
+        assert_eq!(Cell::Brown, board.get_cell_at(19, 0));
+        assert_eq!(Cell::Orange, board.get_cell_at(19, 1));
+        assert_eq!(Cell::Yellow, board.get_cell_at(19, 4));
+        assert_eq!(Cell::Black, board.get_cell_at(19, 7));
+        assert_eq!(Cell::Blue, board.get_cell_at(19, 8));
+        assert_eq!(Cell::Brown, board.get_cell_at(19, 9));
     }
 }

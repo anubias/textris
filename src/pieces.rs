@@ -3,7 +3,7 @@ use crate::utils::{self, Direction, Position, Rotation};
 const SHAPE_SIZE: usize = 4;
 const SHAPE_COUNT: usize = 7;
 
-#[derive(Clone, Copy, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub enum Cell {
     #[default]
     Black,

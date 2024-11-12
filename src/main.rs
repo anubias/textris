@@ -20,7 +20,7 @@ use pieces::{Piece, Tetromino};
 use utils::{Direction, Position};
 
 const PIECE_DROP_MILLISECONDS: u128 = 500;
-const PIECE_SPAWN_COLUMN: isize = 4;
+const PIECE_SPAWN_COLUMN: isize = 3;
 
 struct Context {
     rng: ThreadRng,
