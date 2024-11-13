@@ -110,7 +110,7 @@ fn game_loop(context: &mut Context) -> std::io::Result<()> {
             {
                 board.rotate_piece(utils::Rotation::Clockwise);
             } else if event == Event::Key(KeyCode::Char(' ').into()) {
-                // land piece all the way down
+                board.land_piece();
             }
         }
 

@@ -46,6 +46,16 @@ impl Board {
         false
     }
 
+    pub fn land_piece(&mut self) -> bool {
+        loop {
+            if !self.move_piece(Direction::Down) {
+                break;
+            }
+        }
+
+        true
+    }
+
     pub fn rotate_piece(&mut self, rotation: Rotation) -> bool {
         if let Some(p) = self.piece.as_mut() {
             // Check if 'in-place' rotation is allowed, and rotate if true
