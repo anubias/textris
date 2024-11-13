@@ -1,88 +1,20 @@
 mod board;
+mod context;
 mod pieces;
 mod utils;
 
-use std::{
-    io::{Stdout, Write},
-    time::{Duration, Instant},
-};
+use std::time::{Duration, Instant};
 
 use crossterm::{
-    cursor::{Hide, MoveTo, MoveToNextLine, Show},
     event::{poll, read, Event, KeyCode},
-    terminal::{disable_raw_mode, enable_raw_mode, Clear},
-    ExecutableCommand, QueueableCommand,
+    terminal::{disable_raw_mode, enable_raw_mode},
 };
-use rand::{rngs::ThreadRng, Rng};
 
 use board::Board;
-use pieces::{Piece, Tetromino};
-use utils::{Direction, Position};
+use context::Context;
+use utils::Direction;
 
 const PIECE_DROP_MILLISECONDS: u128 = 500;
-const PIECE_SPAWN_COLUMN: isize = 3;
-
-struct Context {
-    rng: ThreadRng,
-    score: u64,
-    stdout: Stdout,
-}
-
-impl Context {
-    fn new() -> Self {
-        Self {
-            rng: rand::thread_rng(),
-            score: 0,
-            stdout: std::io::stdout(),
-        }
-    }
-
-    fn setup(&mut self) -> std::io::Result<()> {
-        self.stdout
-            .execute(Clear(crossterm::terminal::ClearType::All))?
-            .execute(Hide)?;
-
-        Ok(())
-    }
-
-    fn teardown(&mut self) -> std::io::Result<()> {
-        self.stdout.execute(Show)?;
-
-        Ok(())
-    }
-
-    fn print_game(&mut self, board: String) -> std::io::Result<()> {
-        self.stdout.queue(MoveTo(0, 0))?;
-
-        for (i, line) in board.lines().enumerate() {
-            write!(self.stdout, "{line}")?;
-
-            match i {
-                01 => write!(self.stdout, "     CONTROL KEYS:")?,
-                02 => write!(self.stdout, "          MOVE LEFT:     ⬅️")?,
-                03 => write!(self.stdout, "          MOVE RIGHT:    ➡️")?,
-                04 => write!(self.stdout, "          DROP SOFT:     ⬇️")?,
-                06 => write!(self.stdout, "          ROTATE LEFT:   Z")?,
-                07 => write!(self.stdout, "          ROTATE RIGHT:  X")?,
-                08 => write!(self.stdout, "          HOLD:          C")?,
-                09 => write!(self.stdout, "          DROP HARD:     SPACEBAR")?,
-                18 => write!(self.stdout, "          SCORE:         {}", self.score)?,
-                _ => {}
-            }
-            self.stdout.queue(MoveToNextLine(1))?;
-        }
-
-        self.stdout.flush()
-    }
-
-    fn get_next_piece(&mut self) -> Piece {
-        let next = self.rng.gen_range(1..Tetromino::get_count() + 1);
-        let tetromino = Tetromino::from(next);
-        let position = Position::new(tetromino.get_starting_row(), PIECE_SPAWN_COLUMN);
-
-        Piece::new(tetromino, position)
-    }
-}
 
 fn main() -> std::io::Result<()> {
     let mut context = Context::new();
@@ -99,12 +31,16 @@ fn game_loop(context: &mut Context) -> std::io::Result<()> {
     let mut paused = false;
 
     loop {
+        if !board.has_piece() {
+            board.add_piece(context.get_piece());
+        }
+
         context.print_game(format!("{board}"))?;
 
         if poll(Duration::from_millis(100))? {
             let event = read()?;
 
-            context.score += if event == Event::Key(KeyCode::Esc.into()) {
+            let points = if event == Event::Key(KeyCode::Esc.into()) {
                 break;
             } else if event == Event::Key(KeyCode::Left.into()) {
                 board.move_piece(Direction::Left).1
@@ -131,21 +67,18 @@ fn game_loop(context: &mut Context) -> std::io::Result<()> {
                 board.land_piece()
             } else {
                 0
-            }
+            };
+
+            context.increment_score(points);
         }
 
         if paused {
             continue;
         }
 
-        if !board.has_piece() {
-            let piece = context.get_next_piece();
-            board.add_piece(piece);
-        }
-
         let elapsed = now.elapsed();
         if elapsed.as_millis() >= PIECE_DROP_MILLISECONDS {
-            context.score += board.move_piece(Direction::Down).1;
+            context.increment_score(board.move_piece(Direction::Down).1);
             now = Instant::now();
         }
     }

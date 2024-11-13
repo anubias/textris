@@ -149,6 +149,21 @@ pub struct Piece {
     tetromino: Tetromino,
 }
 
+impl std::fmt::Display for Piece {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let shape = self.tetromino.get_shape();
+        for i in 0..SHAPE_SIZE {
+            let mut line = String::new();
+            for j in 0..SHAPE_SIZE {
+                line = format!("{line}{}", shape[i][j]);
+            }
+            let _ = writeln!(f, "{line}");
+        }
+
+        write!(f, "")
+    }
+}
+
 impl Piece {
     pub fn new(tetromino: Tetromino, position: Position) -> Self {
         Self {
