@@ -97,18 +97,18 @@ fn game_loop(context: &mut Context) -> std::io::Result<()> {
                 board.move_piece(Direction::Right);
             } else if event == Event::Key(KeyCode::Down.into()) {
                 board.move_piece(Direction::Down);
-            } else if event == Event::Key(KeyCode::Char('p').into())
-                || event == Event::Key(KeyCode::Char('P').into())
-            {
-                paused = !paused;
-            } else if event == Event::Key(KeyCode::Char('f').into())
-                || event == Event::Key(KeyCode::Char('F').into())
+            } else if event == Event::Key(KeyCode::Char('z').into())
+                || event == Event::Key(KeyCode::Char('Z').into())
             {
                 board.rotate_piece(utils::Rotation::CounterClockwise);
-            } else if event == Event::Key(KeyCode::Char('g').into())
-                || event == Event::Key(KeyCode::Char('G').into())
+            } else if event == Event::Key(KeyCode::Char('x').into())
+                || event == Event::Key(KeyCode::Char('X').into())
             {
                 board.rotate_piece(utils::Rotation::Clockwise);
+            } else if event == Event::Key(KeyCode::Char('c').into())
+                || event == Event::Key(KeyCode::Char('C').into())
+            {
+                paused = !paused;
             } else if event == Event::Key(KeyCode::Char(' ').into()) {
                 board.land_piece();
             }
