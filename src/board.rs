@@ -50,9 +50,16 @@ impl Board {
     }
 
     pub fn land_piece(&mut self) -> u64 {
+        let mut lines_dropped = 0;
+
         loop {
-            let (moved, points) = self.move_piece(Direction::Down);
-            if !moved {
+            let (moved, mut points) = self.move_piece(Direction::Down);
+            if moved {
+                lines_dropped += 1;
+            } else {
+                if points > 0 {
+                    points = points + lines_dropped + 1;
+                }
                 return points;
             }
         }
