@@ -58,7 +58,15 @@ impl Context {
             write!(self.stdout, "{line}")?;
 
             match i {
-                18 => write!(self.stdout, "          SCORE: {}", self.score)?,
+                01 => write!(self.stdout, "     CONTROL KEYS:")?,
+                02 => write!(self.stdout, "          MOVE LEFT:     ⬅️")?,
+                03 => write!(self.stdout, "          MOVE RIGHT:    ➡️")?,
+                04 => write!(self.stdout, "          DROP SOFT:     ⬇️")?,
+                06 => write!(self.stdout, "          ROTATE LEFT:   Z")?,
+                07 => write!(self.stdout, "          ROTATE RIGHT:  X")?,
+                08 => write!(self.stdout, "          HOLD:          C")?,
+                09 => write!(self.stdout, "          DROP HARD:     SPACEBAR")?,
+                18 => write!(self.stdout, "          SCORE:         {}", self.score)?,
                 _ => {}
             }
             self.stdout.queue(MoveToNextLine(1))?;
