@@ -66,17 +66,17 @@ impl Context {
                     } else {
                         ""
                     };
-                    write!(self.stdout, "           {nl}")?
+                    write!(self.stdout, "          {nl}")?
                 }
                 08 => write!(self.stdout, "     CONTROL KEYS:")?,
                 09 => write!(self.stdout, "          MOVE LEFT:     ⬅️")?,
                 10 => write!(self.stdout, "          MOVE RIGHT:    ➡️")?,
                 11 => write!(self.stdout, "          DROP SOFT:     ⬇️")?,
-                12 => write!(self.stdout, "          ROTATE LEFT:   Z")?,
-                13 => write!(self.stdout, "          ROTATE RIGHT:  X")?,
-                14 => write!(self.stdout, "          HOLD:          C")?,
-                15 => write!(self.stdout, "          DROP HARD:     SPACEBAR")?,
-                18 => write!(self.stdout, "     SCORE:              {}", self.score)?,
+                13 => write!(self.stdout, "          ROTATE LEFT:   Z")?,
+                14 => write!(self.stdout, "          ROTATE RIGHT:  X")?,
+                15 => write!(self.stdout, "          HOLD:          C")?,
+                16 => write!(self.stdout, "          DROP HARD:     SPACEBAR")?,
+                19 => write!(self.stdout, "     SCORE:              {}", self.score)?,
                 _ => {}
             }
             self.stdout.queue(MoveToNextLine(1))?;
