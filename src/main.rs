@@ -31,8 +31,8 @@ fn game_loop(context: &mut Context) -> std::io::Result<()> {
     let mut paused = false;
 
     loop {
-        if !board.has_piece() {
-            board.add_piece(context.get_piece());
+        if !board.has_piece() && !board.add_piece(context.get_piece()) {
+            break;
         }
 
         context.print_game(format!("{board}"))?;
