@@ -68,8 +68,8 @@ impl Context {
                     };
                     write!(self.stdout, "          {nl}")?
                 }
-                08 => write!(self.stdout, "     CONTROL KEYS:")?,
-                09 => write!(self.stdout, "          MOVE LEFT:     ⬅️")?,
+                8 => write!(self.stdout, "     CONTROL KEYS:")?,
+                9 => write!(self.stdout, "          MOVE LEFT:     ⬅️")?,
                 10 => write!(self.stdout, "          MOVE RIGHT:    ➡️")?,
                 11 => write!(self.stdout, "          DROP SOFT:     ⬇️")?,
                 13 => write!(self.stdout, "          ROTATE LEFT:   Z")?,
@@ -82,6 +82,7 @@ impl Context {
             self.stdout.queue(MoveToNextLine(1))?;
         }
 
+        self.stdout.queue(MoveToNextLine(1))?;
         self.stdout.flush()
     }
 
@@ -102,7 +103,7 @@ impl Context {
     }
 
     fn generate_random_piece(&mut self) -> Piece {
-        let next = self.rng.gen_range(1..Tetromino::get_count() + 1);
+        let next = self.rng.gen_range(1..=Tetromino::get_count());
         let tetromino = Tetromino::from(next);
         let position = Position::new(tetromino.get_starting_row(), PIECE_SPAWN_COLUMN);
 

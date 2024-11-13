@@ -43,6 +43,21 @@ pub enum Tetromino {
     Z,
 }
 
+impl From<usize> for Tetromino {
+    fn from(value: usize) -> Self {
+        match value {
+            1 => Self::I,
+            2 => Self::J,
+            3 => Self::L,
+            4 => Self::O,
+            5 => Self::S,
+            6 => Self::T,
+            7 => Self::Z,
+            _ => Self::O,
+        }
+    }
+}
+
 impl Tetromino {
     pub fn get_count() -> usize {
         SHAPE_COUNT
@@ -126,21 +141,6 @@ impl Tetromino {
     }
 }
 
-impl From<usize> for Tetromino {
-    fn from(value: usize) -> Self {
-        match value {
-            1 => Self::I,
-            2 => Self::J,
-            3 => Self::L,
-            4 => Self::O,
-            5 => Self::S,
-            6 => Self::T,
-            7 => Self::Z,
-            _ => Self::O,
-        }
-    }
-}
-
 #[derive(Clone)]
 pub struct Piece {
     position: Position,
@@ -152,15 +152,15 @@ pub struct Piece {
 impl std::fmt::Display for Piece {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let shape = self.tetromino.get_shape();
-        for i in 0..SHAPE_SIZE {
+        for row in shape.iter().take(SHAPE_SIZE) {
             let mut line = String::new();
-            for j in 0..SHAPE_SIZE {
-                line = format!("{line}{}", shape[i][j]);
+            for cell in row.iter().take(SHAPE_SIZE) {
+                line = format!("{line}{}", cell);
             }
             let _ = writeln!(f, "{line}");
         }
 
-        write!(f, "")
+        Ok(())
     }
 }
 
@@ -231,6 +231,7 @@ impl Piece {
 
 //Private functions
 impl Piece {
+    #[allow(clippy::needless_range_loop)]
     fn rotate_shape(&mut self) {
         let template = self.tetromino.get_shape();
         let mut new_shape: [[Cell; SHAPE_SIZE]; SHAPE_SIZE] =

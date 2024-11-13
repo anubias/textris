@@ -210,7 +210,7 @@ impl Board {
         for row in 0..size {
             for col in 0..size {
                 if piece.has_cell_at(row, col) {
-                    let (i_nbr, i_nbc) = utils::to_board_coord(&pos, row, col);
+                    let (i_nbr, i_nbc) = utils::to_board_coord(pos, row, col);
 
                     if Self::inside_board(i_nbr, i_nbc) {
                         let (u_nbr, u_nbc) = utils::to_usize(i_nbr, i_nbc);
