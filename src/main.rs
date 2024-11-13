@@ -24,6 +24,7 @@ const PIECE_SPAWN_COLUMN: isize = 3;
 
 struct Context {
     rng: ThreadRng,
+    score: u64,
     stdout: Stdout,
 }
 
@@ -31,6 +32,7 @@ impl Context {
     fn new() -> Self {
         Self {
             rng: rand::thread_rng(),
+            score: 0,
             stdout: std::io::stdout(),
         }
     }
@@ -52,8 +54,13 @@ impl Context {
     fn print_game(&mut self, board: String) -> std::io::Result<()> {
         self.stdout.queue(MoveTo(0, 0))?;
 
-        for line in board.lines() {
-            write!(std::io::stdout(), "{line}")?;
+        for (i, line) in board.lines().enumerate() {
+            write!(self.stdout, "{line}")?;
+
+            match i {
+                18 => write!(self.stdout, "          SCORE: {}", self.score)?,
+                _ => {}
+            }
             self.stdout.queue(MoveToNextLine(1))?;
         }
 
@@ -89,28 +96,33 @@ fn game_loop(context: &mut Context) -> std::io::Result<()> {
         if poll(Duration::from_millis(100))? {
             let event = read()?;
 
-            if event == Event::Key(KeyCode::Esc.into()) {
+            context.score += if event == Event::Key(KeyCode::Esc.into()) {
                 break;
             } else if event == Event::Key(KeyCode::Left.into()) {
-                board.move_piece(Direction::Left);
+                board.move_piece(Direction::Left).1
             } else if event == Event::Key(KeyCode::Right.into()) {
-                board.move_piece(Direction::Right);
+                board.move_piece(Direction::Right).1
             } else if event == Event::Key(KeyCode::Down.into()) {
-                board.move_piece(Direction::Down);
+                board.move_piece(Direction::Down).1
             } else if event == Event::Key(KeyCode::Char('z').into())
                 || event == Event::Key(KeyCode::Char('Z').into())
             {
                 board.rotate_piece(utils::Rotation::CounterClockwise);
+                0
             } else if event == Event::Key(KeyCode::Char('x').into())
                 || event == Event::Key(KeyCode::Char('X').into())
             {
                 board.rotate_piece(utils::Rotation::Clockwise);
+                0
             } else if event == Event::Key(KeyCode::Char('c').into())
                 || event == Event::Key(KeyCode::Char('C').into())
             {
                 paused = !paused;
+                0
             } else if event == Event::Key(KeyCode::Char(' ').into()) {
-                board.land_piece();
+                board.land_piece()
+            } else {
+                0
             }
         }
 
@@ -125,7 +137,7 @@ fn game_loop(context: &mut Context) -> std::io::Result<()> {
 
         let elapsed = now.elapsed();
         if elapsed.as_millis() >= PIECE_DROP_MILLISECONDS {
-            board.move_piece(Direction::Down);
+            context.score += board.move_piece(Direction::Down).1;
             now = Instant::now();
         }
     }

@@ -5,6 +5,7 @@ use crate::{
 
 const BOARD_WIDTH: usize = 10;
 const BOARD_HEIGHT: usize = 20;
+const LINE_CLEAR_POINTS: [u64; 5] = [0, 40, 100, 300, 1200];
 
 pub struct Board {
     board: [[Cell; BOARD_WIDTH]; BOARD_HEIGHT],
@@ -32,28 +33,29 @@ impl Board {
         }
     }
 
-    pub fn move_piece(&mut self, direction: Direction) -> bool {
+    pub fn move_piece(&mut self, direction: Direction) -> (bool, u64) {
+        let mut points = 0;
+
         if let Some(p) = self.piece.as_mut() {
             if Self::can_piece_slide(&self.board, p, &direction) {
                 p.slide(&direction);
-                return true;
+                return (true, 0);
             }
             if direction == Direction::Down {
-                self.incorporate_piece();
+                points = self.incorporate_piece();
             }
         }
 
-        false
+        (false, points)
     }
 
-    pub fn land_piece(&mut self) -> bool {
+    pub fn land_piece(&mut self) -> u64 {
         loop {
-            if !self.move_piece(Direction::Down) {
-                break;
+            let (moved, points) = self.move_piece(Direction::Down);
+            if !moved {
+                return points;
             }
         }
-
-        true
     }
 
     pub fn rotate_piece(&mut self, rotation: Rotation) -> bool {
@@ -127,7 +129,7 @@ impl Board {
         }
     }
 
-    fn incorporate_piece(&mut self) {
+    fn incorporate_piece(&mut self) -> u64 {
         if let Some(piece) = &self.piece {
             let pos = piece.get_position();
 
@@ -143,17 +145,23 @@ impl Board {
             }
 
             self.remove_piece();
-            self.collapse_completed_rows();
+
+            self.collapse_completed_rows()
+        } else {
+            0
         }
     }
 
-    fn collapse_completed_rows(&mut self) {
+    fn collapse_completed_rows(&mut self) -> u64 {
+        let mut cleared_lines = 0;
+
         loop {
             let mut repeat = false;
 
             for row in (1..BOARD_HEIGHT).rev() {
                 if self.is_row_full(row) {
                     repeat = true;
+                    cleared_lines += 1;
                     for pull_row in (1..row).rev() {
                         self.lower_row(pull_row);
                     }
@@ -164,6 +172,8 @@ impl Board {
                 break;
             }
         }
+
+        LINE_CLEAR_POINTS[cleared_lines]
     }
 
     fn is_row_full(&self, row: usize) -> bool {
@@ -362,8 +372,8 @@ mod tests {
         let piece = Piece::new(crate::pieces::Tetromino::I, pos);
 
         assert!(board.add_piece(piece));
-        assert!(board.move_piece(Direction::Down));
-        assert!(!board.move_piece(Direction::Down));
+        assert!(board.move_piece(Direction::Down).0);
+        assert!(!board.move_piece(Direction::Down).0);
     }
 
     #[test]
@@ -374,9 +384,9 @@ mod tests {
         let piece = Piece::new(crate::pieces::Tetromino::S, pos);
 
         assert!(board.add_piece(piece));
-        assert!(board.move_piece(Direction::Down));
-        assert!(board.move_piece(Direction::Down));
-        assert!(!board.move_piece(Direction::Down));
+        assert!(board.move_piece(Direction::Down).0);
+        assert!(board.move_piece(Direction::Down).0);
+        assert!(!board.move_piece(Direction::Down).0);
     }
 
     #[test]
@@ -389,13 +399,13 @@ mod tests {
         let piece_l = Piece::new(crate::pieces::Tetromino::L, pos);
 
         assert!(board.add_piece(piece_o));
-        assert!(board.move_piece(Direction::Down));
-        assert!(board.move_piece(Direction::Down));
-        assert!(!board.move_piece(Direction::Down));
+        assert!(board.move_piece(Direction::Down).0);
+        assert!(board.move_piece(Direction::Down).0);
+        assert!(!board.move_piece(Direction::Down).0);
 
         assert!(board.add_piece(piece_l));
-        assert!(board.move_piece(Direction::Down));
-        assert!(!board.move_piece(Direction::Down));
+        assert!(board.move_piece(Direction::Down).0);
+        assert!(!board.move_piece(Direction::Down).0);
     }
 
     #[test]
@@ -416,10 +426,10 @@ mod tests {
         board.incorporate_piece();
 
         assert!(board.add_piece(piece_t));
-        assert!(board.move_piece(Direction::Down));
-        assert!(board.move_piece(Direction::Down));
-        assert!(board.move_piece(Direction::Down));
-        assert!(!board.move_piece(Direction::Down));
+        assert!(board.move_piece(Direction::Down).0);
+        assert!(board.move_piece(Direction::Down).0);
+        assert!(board.move_piece(Direction::Down).0);
+        assert!(!board.move_piece(Direction::Down).0);
     }
 
     #[test]
