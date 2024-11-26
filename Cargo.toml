@@ -5,4 +5,5 @@ edition = "2021"
 
 [dependencies]
 crossterm = "0.28.1"
+kira = "0.9.6"
 rand = "0.8.5"

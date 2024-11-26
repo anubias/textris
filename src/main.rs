@@ -5,10 +5,7 @@ mod utils;
 
 use std::time::{Duration, Instant};
 
-use crossterm::{
-    event::{poll, read, Event, KeyCode},
-    terminal::{disable_raw_mode, enable_raw_mode},
-};
+use crossterm::event::{poll, read, Event, KeyCode};
 
 use board::Board;
 use context::Context;
@@ -24,8 +21,6 @@ fn main() -> std::io::Result<()> {
 }
 
 fn game_loop(context: &mut Context) -> std::io::Result<()> {
-    enable_raw_mode()?;
-
     let mut board = Board::new();
     let mut now = Instant::now();
     let mut paused = false;
@@ -63,8 +58,19 @@ fn game_loop(context: &mut Context) -> std::io::Result<()> {
             {
                 paused = !paused;
                 0
+            } else if event == Event::Key(KeyCode::Char('m').into())
+                || event == Event::Key(KeyCode::Char('M').into())
+            {
+                context.mute_toggle();
+                0
             } else if event == Event::Key(KeyCode::Char(' ').into()) {
                 board.land_piece()
+            } else if event == Event::Key(KeyCode::Char('-').into()) {
+                context.volume_down();
+                0
+            } else if event == Event::Key(KeyCode::Char('+').into()) {
+                context.volume_up();
+                0
             } else {
                 0
             };
@@ -83,5 +89,5 @@ fn game_loop(context: &mut Context) -> std::io::Result<()> {
         }
     }
 
-    disable_raw_mode()
+    Ok(())
 }
