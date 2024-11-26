@@ -9,7 +9,7 @@ use crossterm::event::{poll, read, Event, KeyCode};
 
 use board::Board;
 use context::Context;
-use utils::Direction;
+use utils::{Direction, Score};
 
 const PIECE_DROP_MILLISECONDS: u128 = 500;
 
@@ -35,7 +35,7 @@ fn game_loop(context: &mut Context) -> std::io::Result<()> {
         if poll(Duration::from_millis(100))? {
             let event = read()?;
 
-            let points = if event == Event::Key(KeyCode::Esc.into()) {
+            let score = if event == Event::Key(KeyCode::Esc.into()) {
                 break;
             } else if event == Event::Key(KeyCode::Left.into()) {
                 board.move_piece(Direction::Left).1
@@ -47,35 +47,35 @@ fn game_loop(context: &mut Context) -> std::io::Result<()> {
                 || event == Event::Key(KeyCode::Char('Z').into())
             {
                 board.rotate_piece(utils::Rotation::CounterClockwise);
-                0
+                Score::default()
             } else if event == Event::Key(KeyCode::Char('x').into())
                 || event == Event::Key(KeyCode::Char('X').into())
             {
                 board.rotate_piece(utils::Rotation::Clockwise);
-                0
+                Score::default()
             } else if event == Event::Key(KeyCode::Char('c').into())
                 || event == Event::Key(KeyCode::Char('C').into())
             {
                 paused = !paused;
-                0
+                Score::default()
             } else if event == Event::Key(KeyCode::Char('m').into())
                 || event == Event::Key(KeyCode::Char('M').into())
             {
                 context.mute_toggle();
-                0
+                Score::default()
             } else if event == Event::Key(KeyCode::Char(' ').into()) {
                 board.land_piece()
             } else if event == Event::Key(KeyCode::Char('-').into()) {
                 context.volume_down();
-                0
+                Score::default()
             } else if event == Event::Key(KeyCode::Char('+').into()) {
                 context.volume_up();
-                0
+                Score::default()
             } else {
-                0
+                Score::default()
             };
 
-            context.increment_score(points);
+            context.increment_score(score);
         }
 
         if paused {

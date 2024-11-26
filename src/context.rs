@@ -1,4 +1,7 @@
-use std::io::{Stdout, Write};
+use std::{
+    io::{Stdout, Write},
+    time::Duration,
+};
 
 use crossterm::{
     cursor::{Hide, MoveTo, MoveToNextLine, Show},
@@ -7,24 +10,32 @@ use crossterm::{
 };
 use kira::{
     manager::{AudioManager, AudioManagerSettings, DefaultBackend},
-    sound::static_sound::{StaticSoundData, StaticSoundHandle},
+    sound::{
+        static_sound::{StaticSoundData, StaticSoundHandle},
+        PlaybackRate,
+    },
     tween::Tween,
 };
 use rand::{rngs::ThreadRng, Rng};
 
 use crate::{
     pieces::{Piece, Tetromino},
-    utils::Position,
+    utils::{Position, Score},
 };
 
 const PIECE_SPAWN_COLUMN: isize = 3;
+const LEVEL_INC_LINES: u32 = 5;
+const MUSIC_INC_LEVEL: u32 = 6;
+const MUSIC_INC_SPEED: u64 = 5;
+const SONGS_COUNT: u8 = 3;
 
 pub struct Context {
     audio_manager: Option<AudioManager>,
+    level: u32,
     muted: bool,
     next_piece: Option<Piece>,
     rng: ThreadRng,
-    score: u64,
+    score: Score,
     song: Option<StaticSoundHandle>,
     song_index: u8,
     stdout: Stdout,
@@ -35,10 +46,11 @@ impl Context {
     pub fn new() -> Self {
         Self {
             audio_manager: None,
+            level: 0,
             muted: false,
             next_piece: None,
             rng: rand::thread_rng(),
-            score: 0,
+            score: Score::default(),
             song: None,
             song_index: 0,
             stdout: std::io::stdout(),
@@ -56,7 +68,6 @@ impl Context {
         if let Ok(manager) = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default()) {
             self.audio_manager = Some(manager);
             self.change_song();
-            self.update_volume();
         }
 
         Ok(())
@@ -83,26 +94,39 @@ impl Context {
             write!(self.stdout, "{line}")?;
 
             match i {
-                0 => write!(self.stdout, "     NEXT PIECE:")?,
-                1..5 => {
-                    let nl = if let Some(next_piece_line) = next_piece_lines.get(i - 1) {
+                0 => {
+                    let nl = if let Some(next_piece_line) = next_piece_lines.get(i) {
                         *next_piece_line
                     } else {
                         ""
                     };
-                    write!(self.stdout, "          {nl}")?
+                    write!(self.stdout, "     NEXT PIECE:    {nl}")?;
                 }
-                6 => write!(self.stdout, "     CONTROL KEYS:")?,
-                7 => write!(self.stdout, "          MOVE LEFT:     ⬅️")?,
-                8 => write!(self.stdout, "          MOVE RIGHT:    ➡️")?,
-                9 => write!(self.stdout, "          DROP SOFT:     ⬇️")?,
-                11 => write!(self.stdout, "          ROTATE LEFT:   Z")?,
-                12 => write!(self.stdout, "          ROTATE RIGHT:  X")?,
-                13 => write!(self.stdout, "          HOLD:          C")?,
-                14 => write!(self.stdout, "          DROP HARD:     SPACEBAR")?,
-                16 => write!(self.stdout, "          VOLUME:        + / -")?,
-                17 => write!(self.stdout, "          MUTE TOGGLE:   M")?,
-                19 => write!(self.stdout, "     SCORE:              {}", self.score)?,
+                1..4 => {
+                    let nl = if let Some(next_piece_line) = next_piece_lines.get(i) {
+                        *next_piece_line
+                    } else {
+                        ""
+                    };
+
+                    write!(self.stdout, "                    {nl}")?
+                }
+                5 => write!(self.stdout, "     MOVE LEFT:     ⬅️")?,
+                6 => write!(self.stdout, "     MOVE RIGHT:    ➡️")?,
+                7 => write!(self.stdout, "     DROP SOFT:     ⬇️")?,
+                9 => write!(self.stdout, "     ROTATE LEFT:   Z")?,
+                10 => write!(self.stdout, "     ROTATE RIGHT:  X")?,
+                11 => write!(self.stdout, "     HOLD:          C")?,
+                12 => write!(self.stdout, "     DROP HARD:     SPACEBAR")?,
+                14 => write!(self.stdout, "     VOLUME:        + / -")?,
+                15 => write!(self.stdout, "     MUTE TOGGLE:   M")?,
+                17 => write!(self.stdout, "     LEVEL:         {}", self.level + 1)?,
+                18 => write!(
+                    self.stdout,
+                    "     LINES:         {}",
+                    self.score.lines_destroyed
+                )?,
+                19 => write!(self.stdout, "     POINTS:        {}", self.score.points)?,
                 _ => {}
             }
             self.stdout.queue(MoveToNextLine(1))?;
@@ -124,8 +148,19 @@ impl Context {
         piece
     }
 
-    pub fn increment_score(&mut self, points: u64) {
-        self.score += points;
+    pub fn increment_score(&mut self, score: Score) {
+        let prev_level = self.level;
+
+        self.score.increment(score);
+        self.level = self.score.lines_destroyed as u32 / LEVEL_INC_LINES;
+
+        if self.level > prev_level {
+            if self.level % MUSIC_INC_LEVEL == 0 {
+                self.change_song();
+            } else {
+                self.update_playback_rate(self.level % MUSIC_INC_LEVEL + 1);
+            }
+        }
     }
 
     pub fn mute_toggle(&mut self) {
@@ -168,11 +203,18 @@ impl Context {
                 }
 
                 if let Ok(mut song) = manager.play(sound_data) {
-                    song.set_loop_region(0.0..);
-
+                    if self.song_index == 0 {
+                        // this song has a 3 second pause at the beginning
+                        song.seek_by(3.0);
+                        song.set_loop_region(3.0..);
+                    } else {
+                        song.set_loop_region(0.0..);
+                    }
                     self.song = Some(song);
+                    self.update_volume();
+
                     self.song_index += 1;
-                    self.song_index %= 3;
+                    self.song_index %= SONGS_COUNT;
                 }
             }
         }
@@ -181,6 +223,18 @@ impl Context {
     fn update_volume(&mut self) {
         if let Some(song) = self.song.as_mut() {
             song.set_volume(self.volume, Tween::default());
+        }
+    }
+
+    fn update_playback_rate(&mut self, rate: u32) {
+        if let Some(song) = self.song.as_mut() {
+            song.set_playback_rate(
+                PlaybackRate::Semitones(rate as f64),
+                Tween {
+                    duration: Duration::from_secs(MUSIC_INC_SPEED),
+                    ..Default::default()
+                },
+            );
         }
     }
 }

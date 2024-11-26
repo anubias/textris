@@ -1,6 +1,6 @@
 use crate::{
     pieces::{Cell, Piece},
-    utils::{self, Direction, Rotation},
+    utils::{self, Direction, Rotation, Score},
 };
 
 const BOARD_WIDTH: usize = 10;
@@ -33,34 +33,34 @@ impl Board {
         }
     }
 
-    pub fn move_piece(&mut self, direction: Direction) -> (bool, u64) {
-        let mut points = 0;
+    pub fn move_piece(&mut self, direction: Direction) -> (bool, Score) {
+        let mut score = Score::default();
 
         if let Some(p) = self.piece.as_mut() {
             if Self::can_piece_slide(&self.board, p, &direction) {
                 p.slide(&direction);
-                return (true, 0);
+                return (true, score);
             }
             if direction == Direction::Down {
-                points = self.incorporate_piece();
+                score = self.incorporate_piece();
             }
         }
 
-        (false, points)
+        (false, score)
     }
 
-    pub fn land_piece(&mut self) -> u64 {
+    pub fn land_piece(&mut self) -> Score {
         let mut lines_dropped = 0;
 
         loop {
-            let (moved, mut points) = self.move_piece(Direction::Down);
+            let (moved, mut score) = self.move_piece(Direction::Down);
             if moved {
                 lines_dropped += 1;
             } else {
-                if points > 0 {
-                    points = points + lines_dropped + 1;
+                if score.points > 0 {
+                    score.points += lines_dropped + 1;
                 }
-                return points;
+                return score;
             }
         }
     }
@@ -136,7 +136,7 @@ impl Board {
         }
     }
 
-    fn incorporate_piece(&mut self) -> u64 {
+    fn incorporate_piece(&mut self) -> Score {
         if let Some(piece) = &self.piece {
             let pos = piece.get_position();
 
@@ -155,11 +155,11 @@ impl Board {
 
             self.collapse_completed_rows()
         } else {
-            0
+            Score::default()
         }
     }
 
-    fn collapse_completed_rows(&mut self) -> u64 {
+    fn collapse_completed_rows(&mut self) -> Score {
         let mut cleared_lines = 0;
 
         loop {
@@ -180,7 +180,10 @@ impl Board {
             }
         }
 
-        LINE_CLEAR_POINTS[cleared_lines]
+        Score {
+            lines_destroyed: cleared_lines,
+            points: LINE_CLEAR_POINTS[cleared_lines],
+        }
     }
 
     fn is_row_full(&self, row: usize) -> bool {

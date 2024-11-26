@@ -23,6 +23,19 @@ pub enum Rotation {
     CounterClockwise,
 }
 
+#[derive(Default)]
+pub struct Score {
+    pub lines_destroyed: usize,
+    pub points: u64,
+}
+
+impl Score {
+    pub fn increment(&mut self, other: Self) {
+        self.lines_destroyed += other.lines_destroyed;
+        self.points += other.points;
+    }
+}
+
 /// Translates the piece coordinates into board coordinates, by adding to the
 /// piece coordinates the position (top-left) of the piece relative to the board.
 ///
