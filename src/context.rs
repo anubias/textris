@@ -20,10 +20,9 @@ use rand::{rngs::ThreadRng, Rng};
 
 use crate::{
     pieces::{Piece, Tetromino},
-    utils::{Position, Score},
+    utils::Score,
 };
 
-const PIECE_SPAWN_COLUMN: isize = 3;
 const LEVEL_INC_LINES: u32 = 5;
 const MUSIC_INC_LEVEL: u32 = 6;
 const MUSIC_INC_SPEED: u64 = 5;
@@ -188,7 +187,7 @@ impl Context {
     fn generate_random_piece(&mut self) -> Piece {
         let next = self.rng.gen_range(1..=Tetromino::get_count());
         let tetromino = Tetromino::from(next);
-        let position = Position::new(tetromino.get_starting_row(), PIECE_SPAWN_COLUMN);
+        let position = tetromino.get_spawn_position();
 
         Piece::new(tetromino, position)
     }

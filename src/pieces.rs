@@ -63,10 +63,11 @@ impl Tetromino {
         SHAPE_COUNT
     }
 
-    pub fn get_starting_row(&self) -> isize {
+    pub fn get_spawn_position(&self) -> Position {
         match self {
-            Self::I | Self::J | Self::L => 0,
-            _ => -1,
+            Self::I | Self::L => Position::new(0, 3),
+            Self::J => Position::new(0, 4),
+            _ => Position::new(-1, 3),
         }
     }
 
@@ -86,9 +87,9 @@ impl Tetromino {
             Tetromino::J => {
                 let blue = Cell::Blue;
                 [
-                    [black, black, blue, black],
-                    [black, black, blue, black],
-                    [black, blue, blue, black],
+                    [black, blue, black, black],
+                    [black, blue, black, black],
+                    [blue, blue, black, black],
                     [black, black, black, black],
                 ]
             }
@@ -132,8 +133,8 @@ impl Tetromino {
                 let red = Cell::Red;
                 [
                     [black, black, black, black],
+                    [red, red, black, black],
                     [black, red, red, black],
-                    [black, black, red, red],
                     [black, black, black, black],
                 ]
             }
@@ -237,28 +238,33 @@ impl Piece {
         let mut new_shape: [[Cell; SHAPE_SIZE]; SHAPE_SIZE] =
             [[Cell::Black; SHAPE_SIZE]; SHAPE_SIZE];
 
+        let piece_size = match self.tetromino {
+            Tetromino::I | Tetromino::O => SHAPE_SIZE,
+            _ => SHAPE_SIZE - 1,
+        };
+
         self.shape = match self.orientation {
             Direction::Up => template,
             Direction::Down => {
-                for row in (0..SHAPE_SIZE).rev() {
-                    for col in (0..SHAPE_SIZE).rev() {
-                        new_shape[SHAPE_SIZE - 1 - row][SHAPE_SIZE - 1 - col] = template[row][col];
+                for row in (0..piece_size).rev() {
+                    for col in (0..piece_size).rev() {
+                        new_shape[piece_size - 1 - row][piece_size - 1 - col] = template[row][col];
                     }
                 }
                 new_shape
             }
             Direction::Left => {
-                for col in (0..SHAPE_SIZE).rev() {
-                    for row in 0..SHAPE_SIZE {
-                        new_shape[SHAPE_SIZE - 1 - col][row] = template[row][col];
+                for col in (0..piece_size).rev() {
+                    for row in 0..piece_size {
+                        new_shape[piece_size - 1 - col][row] = template[row][col];
                     }
                 }
                 new_shape
             }
             Direction::Right => {
-                for col in 0..SHAPE_SIZE {
-                    for row in (0..SHAPE_SIZE).rev() {
-                        new_shape[col][SHAPE_SIZE - 1 - row] = template[row][col];
+                for col in 0..piece_size {
+                    for row in (0..piece_size).rev() {
+                        new_shape[col][piece_size - 1 - row] = template[row][col];
                     }
                 }
                 new_shape
