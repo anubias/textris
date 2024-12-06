@@ -1,7 +1,6 @@
 use crate::utils::{self, Direction, Position, Rotation};
 
 const SHAPE_SIZE: usize = 4;
-const SHAPE_COUNT: usize = 7;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub enum Cell {
@@ -59,10 +58,6 @@ impl From<usize> for Tetromino {
 }
 
 impl Tetromino {
-    pub fn get_count() -> usize {
-        SHAPE_COUNT
-    }
-
     pub fn get_spawn_position(&self) -> Position {
         match self {
             Self::I | Self::L => Position::new(0, 3),

@@ -33,6 +33,7 @@ pub struct Context {
     level: u32,
     muted: bool,
     next_piece: Option<Piece>,
+    random_bag: Vec<Tetromino>,
     rng: ThreadRng,
     score: Score,
     song: Option<StaticSoundHandle>,
@@ -48,6 +49,7 @@ impl Context {
             level: 0,
             muted: false,
             next_piece: None,
+            random_bag: Vec::new(),
             rng: rand::thread_rng(),
             score: Score::default(),
             song: None,
@@ -139,10 +141,10 @@ impl Context {
         let piece = if let Some(p) = self.next_piece.clone() {
             p
         } else {
-            self.generate_random_piece()
+            self.take_from_random_bag()
         };
 
-        self.next_piece = Some(self.generate_random_piece());
+        self.next_piece = Some(self.take_from_random_bag());
 
         piece
     }
@@ -184,12 +186,33 @@ impl Context {
         self.update_volume();
     }
 
-    fn generate_random_piece(&mut self) -> Piece {
-        let next = self.rng.gen_range(1..=Tetromino::get_count());
-        let tetromino = Tetromino::from(next);
+    fn take_from_random_bag(&mut self) -> Piece {
+        if self.random_bag.is_empty() {
+            self.refill_random_bag();
+        }
+
+        let tetromino = self.random_bag.pop().unwrap_or(Tetromino::O);
         let position = tetromino.get_spawn_position();
 
         Piece::new(tetromino, position)
+    }
+
+    fn refill_random_bag(&mut self) {
+        let mut bag = Vec::new();
+        bag.push(Tetromino::I);
+        bag.push(Tetromino::J);
+        bag.push(Tetromino::L);
+        bag.push(Tetromino::O);
+        bag.push(Tetromino::S);
+        bag.push(Tetromino::T);
+        bag.push(Tetromino::Z);
+
+        self.random_bag = Vec::new();
+        while !bag.is_empty() {
+            let index = self.rng.gen_range(0..bag.len());
+            let tetromino = bag.remove(index);
+            self.random_bag.push(tetromino);
+        }
     }
 
     fn change_song(&mut self) {
