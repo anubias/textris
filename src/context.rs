@@ -164,6 +164,12 @@ impl Context {
         }
     }
 
+    pub fn get_game_speed_micros(&self) -> f64 {
+        let float_level = self.level as f64;
+
+        (0.8 - (float_level * 0.007)).powf(float_level)
+    }
+
     pub fn mute_toggle(&mut self) {
         if let Some(song) = self.song.as_mut() {
             if self.muted {
@@ -198,14 +204,15 @@ impl Context {
     }
 
     fn refill_random_bag(&mut self) {
-        let mut bag = Vec::new();
-        bag.push(Tetromino::I);
-        bag.push(Tetromino::J);
-        bag.push(Tetromino::L);
-        bag.push(Tetromino::O);
-        bag.push(Tetromino::S);
-        bag.push(Tetromino::T);
-        bag.push(Tetromino::Z);
+        let mut bag = vec![
+            Tetromino::I,
+            Tetromino::J,
+            Tetromino::L,
+            Tetromino::O,
+            Tetromino::S,
+            Tetromino::T,
+            Tetromino::Z,
+        ];
 
         self.random_bag = Vec::new();
         while !bag.is_empty() {

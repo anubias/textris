@@ -11,7 +11,7 @@ use board::Board;
 use context::Context;
 use utils::{Direction, Score};
 
-const PIECE_DROP_MILLISECONDS: u128 = 500;
+const PIECE_DROP_MICROSECONDS: f64 = 1_000_000.0;
 
 fn main() -> std::io::Result<()> {
     let mut context = Context::new();
@@ -22,8 +22,9 @@ fn main() -> std::io::Result<()> {
 
 fn game_loop(context: &mut Context) -> std::io::Result<()> {
     let mut board = Board::new();
-    let mut now = Instant::now();
     let mut paused = false;
+    let mut speed_micros = context.get_game_speed_micros();
+    let mut now = Instant::now();
 
     loop {
         if !board.has_piece() && !board.add_piece(context.get_piece()) {
@@ -32,7 +33,7 @@ fn game_loop(context: &mut Context) -> std::io::Result<()> {
 
         context.print_game(format!("{board}"))?;
 
-        if poll(Duration::from_millis(100))? {
+        if poll(Duration::from_millis(1))? {
             let event = read()?;
 
             let score = if event == Event::Key(KeyCode::Esc.into()) {
@@ -82,9 +83,9 @@ fn game_loop(context: &mut Context) -> std::io::Result<()> {
             continue;
         }
 
-        let elapsed = now.elapsed();
-        if elapsed.as_millis() >= PIECE_DROP_MILLISECONDS {
+        if (now.elapsed().as_micros() as f64) >= (PIECE_DROP_MICROSECONDS * speed_micros) {
             context.increment_score(board.move_piece(Direction::Down).1);
+            speed_micros = context.get_game_speed_micros();
             now = Instant::now();
         }
     }
