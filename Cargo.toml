@@ -4,6 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-crossterm = "0.28.1"
-kira = "0.9.6"
-rand = "0.8.5"
+crossterm = "0.29"
+kira = "0.10"
+rand = "0.9"
