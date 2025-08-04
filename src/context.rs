@@ -9,12 +9,8 @@ use crossterm::{
     ExecutableCommand, QueueableCommand,
 };
 use kira::{
-    manager::{AudioManager, AudioManagerSettings, DefaultBackend},
-    sound::{
-        static_sound::{StaticSoundData, StaticSoundHandle},
-        PlaybackRate,
-    },
-    tween::Tween,
+    sound::static_sound::{StaticSoundData, StaticSoundHandle},
+    AudioManager, AudioManagerSettings, Decibels, DefaultBackend, Semitones, Tween,
 };
 use rand::{rngs::ThreadRng, Rng};
 
@@ -26,6 +22,11 @@ use crate::{
 const LEVEL_INC_LINES: u32 = 5;
 const MUSIC_INC_LEVEL: u32 = 6;
 const MUSIC_INC_SPEED: u64 = 5;
+
+const VOLUME_MIN: f32 = Decibels::SILENCE.0;
+const VOLUME_MAX: f32 = 10.0;
+const VOLUME_INC_STEP: f32 = 1.00;
+
 const SONGS_COUNT: u8 = 3;
 
 pub struct Context {
@@ -39,7 +40,7 @@ pub struct Context {
     song: Option<StaticSoundHandle>,
     song_index: u8,
     stdout: Stdout,
-    volume: f64,
+    volume: f32,
 }
 
 impl Context {
@@ -50,12 +51,12 @@ impl Context {
             muted: false,
             next_piece: None,
             random_bag: Vec::new(),
-            rng: rand::thread_rng(),
+            rng: rand::rng(),
             score: Score::default(),
             song: None,
             song_index: 0,
             stdout: std::io::stdout(),
-            volume: 0.5,
+            volume: 1.0,
         }
     }
 
@@ -183,12 +184,12 @@ impl Context {
     }
 
     pub fn volume_down(&mut self) {
-        self.volume = 0.0f64.max(self.volume - 0.05);
+        self.volume = VOLUME_MIN.max(self.volume - VOLUME_INC_STEP);
         self.update_volume();
     }
 
     pub fn volume_up(&mut self) {
-        self.volume = 1.0f64.min(self.volume + 0.05);
+        self.volume = VOLUME_MAX.min(self.volume + VOLUME_INC_STEP);
         self.update_volume();
     }
 
@@ -216,7 +217,7 @@ impl Context {
 
         self.random_bag = Vec::new();
         while !bag.is_empty() {
-            let index = self.rng.gen_range(0..bag.len());
+            let index = self.rng.random_range(0..bag.len());
             let tetromino = bag.remove(index);
             self.random_bag.push(tetromino);
         }
@@ -251,6 +252,7 @@ impl Context {
 
     fn update_volume(&mut self) {
         if let Some(song) = self.song.as_mut() {
+            println!("Setting volume to: {}", self.volume);
             song.set_volume(self.volume, Tween::default());
         }
     }
@@ -258,7 +260,7 @@ impl Context {
     fn update_playback_rate(&mut self, rate: u32) {
         if let Some(song) = self.song.as_mut() {
             song.set_playback_rate(
-                PlaybackRate::Semitones(rate as f64),
+                Semitones(rate as f64),
                 Tween {
                     duration: Duration::from_secs(MUSIC_INC_SPEED),
                     ..Default::default()
