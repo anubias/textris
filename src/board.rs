@@ -234,21 +234,18 @@ impl Board {
         if let Some(piece) = self.piece.as_ref() {
             let pos = piece.get_position();
 
-            let result = if piece.is_inside(board_row, board_col) {
+            if piece.is_inside(board_row, board_col) {
                 let (i_pr, i_pc) = utils::to_piece_coord(pos, board_row, board_col);
                 // we are already inside the piece, so the piece-coordinates should be proper
                 let (u_pr, u_pc) = utils::to_usize(i_pr, i_pc);
-                let piece_cell = if piece.has_cell_at(u_pr, u_pc) {
+                if piece.has_cell_at(u_pr, u_pc) {
                     *piece.get_cell_at(u_pr, u_pc)
                 } else {
                     self.board[board_row][board_col]
-                };
-                piece_cell
+                }
             } else {
                 self.board[board_row][board_col]
-            };
-
-            result
+            }
         } else {
             self.board[board_row][board_col]
         }

@@ -157,7 +157,7 @@ impl Context {
         self.level = self.score.lines_destroyed as u32 / LEVEL_INC_LINES;
 
         if self.level > prev_level {
-            if self.level % MUSIC_INC_LEVEL == 0 {
+            if self.level.is_multiple_of(MUSIC_INC_LEVEL) {
                 self.change_song();
             } else {
                 self.update_playback_rate(self.level % MUSIC_INC_LEVEL + 1);
@@ -252,7 +252,6 @@ impl Context {
 
     fn update_volume(&mut self) {
         if let Some(song) = self.song.as_mut() {
-            println!("Setting volume to: {}", self.volume);
             song.set_volume(self.volume, Tween::default());
         }
     }
