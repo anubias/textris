@@ -1,9 +1,42 @@
 [package]
 name = "textris"
+description = "A tetris clone for the terminal"
+repository = "https://github.com/anubias/textris"
 version = "0.1.0"
 edition = "2024"
+authors = ["Aurelian Pop"]
+license = "MIT"
 
 [dependencies]
 crossterm = "0.29"
 kira = "0.11"
 rand = "0.9"
+
+[package.metadata.deb]
+extended-description = ""
+copyright = "Copyright © 2024-2026 Aurelian Pop"
+license-file = ["LICENSE", "1"]
+section = "games"
+priority = "optional"
+assets = [
+    [
+        "target/release/textris",
+        "/usr/games/textris",
+        "755",
+    ],
+    [
+        "res/theme-0.mp3",
+        "/usr/share/games/textris/theme-0.mp3",
+        "644",
+    ],
+    [
+        "res/theme-1.mp3",
+        "/usr/share/games/textris/theme-1.mp3",
+        "644",
+    ],
+    [
+        "res/theme-2.mp3",
+        "/usr/share/games/textris/theme-2.mp3",
+        "644",
+    ],
+]
