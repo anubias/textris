@@ -29,7 +29,7 @@ const VOLUME_INC_STEP: f32 = 1.00;
 
 const SONGS_COUNT: usize = 3;
 
-const ASSET_PATH: &str = "/usr/share/games/textris";
+const ASSET_PATH: &str = "res";
 
 pub struct Context {
     audio_manager: Option<AudioManager>,
