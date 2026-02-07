@@ -27,7 +27,9 @@ const VOLUME_MIN: f32 = Decibels::SILENCE.0;
 const VOLUME_MAX: f32 = 10.0;
 const VOLUME_INC_STEP: f32 = 1.00;
 
-const SONGS_COUNT: u8 = 3;
+const SONGS_COUNT: usize = 3;
+
+const ASSET_PATH: &str = "assets";
 
 pub struct Context {
     audio_manager: Option<AudioManager>,
@@ -37,8 +39,9 @@ pub struct Context {
     random_bag: Vec<Tetromino>,
     rng: ThreadRng,
     score: Score,
-    song: Option<StaticSoundHandle>,
-    song_index: u8,
+    song_handle: Option<StaticSoundHandle>,
+    song_index: usize,
+    songs: Vec<StaticSoundData>,
     stdout: Stdout,
     volume: f32,
 }
@@ -53,8 +56,9 @@ impl Context {
             random_bag: Vec::new(),
             rng: rand::rng(),
             score: Score::default(),
-            song: None,
+            song_handle: None,
             song_index: 0,
+            songs: Vec::new(),
             stdout: std::io::stdout(),
             volume: 1.0,
         }
@@ -67,7 +71,8 @@ impl Context {
             .execute(Clear(crossterm::terminal::ClearType::All))?
             .execute(Hide)?;
 
-        if let Ok(manager) = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default()) {
+        if self.load_songs() && let Ok(manager) = AudioManager::<DefaultBackend>::new(AudioManagerSettings::default())
+        {
             self.audio_manager = Some(manager);
             self.change_song();
         }
@@ -172,7 +177,7 @@ impl Context {
     }
 
     pub fn mute_toggle(&mut self) {
-        if let Some(song) = self.song.as_mut() {
+        if let Some(song) = self.song_handle.as_mut() {
             if self.muted {
                 song.resume(Tween::default());
                 self.muted = false;
@@ -223,41 +228,54 @@ impl Context {
         }
     }
 
+    fn load_songs(&mut self) -> bool {
+        for i in 0..SONGS_COUNT {
+            let path = format!("{ASSET_PATH}/theme-{i}.mp3");
+            if let Ok(sound_data) = StaticSoundData::from_file(&path) {
+                self.songs.push(sound_data);
+            }
+        }
+
+        if self.songs.len() != SONGS_COUNT {
+            eprintln!("Failed to load all the songs, audio will be disabled.");
+            false
+        } else {
+            true
+        }
+    }
+
     fn change_song(&mut self) {
         if let Some(manager) = self.audio_manager.as_mut() {
-            let path = format!("assets/theme-{}.mp3", self.song_index);
+            if let Some(old_song) = self.song_handle.as_mut() {
+                old_song.stop(Tween::default());
+            }
 
-            if let Ok(sound_data) = StaticSoundData::from_file(path) {
-                if let Some(old_song) = self.song.as_mut() {
-                    old_song.stop(Tween::default());
+            let to_play = self.songs[self.song_index].clone();
+            if let Ok(mut song) = manager.play(to_play) {
+                if self.song_index == 0 {
+                    // this song has a 3 second pause at the beginning
+                    song.seek_by(3.0);
+                    song.set_loop_region(3.0..);
+                } else {
+                    song.set_loop_region(0.0..);
                 }
+                self.song_handle = Some(song);
+                self.update_volume();
 
-                if let Ok(mut song) = manager.play(sound_data) {
-                    if self.song_index == 0 {
-                        // this song has a 3 second pause at the beginning
-                        song.seek_by(3.0);
-                        song.set_loop_region(3.0..);
-                    } else {
-                        song.set_loop_region(0.0..);
-                    }
-                    self.song = Some(song);
-                    self.update_volume();
-
-                    self.song_index += 1;
-                    self.song_index %= SONGS_COUNT;
-                }
+                self.song_index += 1;
+                self.song_index %= self.songs.len();
             }
         }
     }
 
     fn update_volume(&mut self) {
-        if let Some(song) = self.song.as_mut() {
+        if let Some(song) = self.song_handle.as_mut() {
             song.set_volume(self.volume, Tween::default());
         }
     }
 
     fn update_playback_rate(&mut self, rate: u32) {
-        if let Some(song) = self.song.as_mut() {
+        if let Some(song) = self.song_handle.as_mut() {
             song.set_playback_rate(
                 Semitones(rate as f64),
                 Tween {

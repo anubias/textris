@@ -1,6 +1,6 @@
 #!/bin/sh
 
-ASSETS="assets"
+ASSETS="res"
 CURDIR=`pwd`
 PACKAGE="package"
 TARGET_DIR="target"
